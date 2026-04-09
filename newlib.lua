@@ -214,19 +214,19 @@ local Library = {
     OriginalMinSize = Vector2.new(480, 360),
     MinSize = Vector2.new(480, 360),
     DPIScale = 1,
-    CornerRadius = 8,
+    CornerRadius = 6,
     CornerRadiusDropdown = false, -- Temporary
 
     IsLightTheme = false,
     Scheme = {
-        BackgroundColor = Color3.fromRGB(0, 0, 0),
-        MainColor = Color3.fromRGB(10, 10, 10),
-        AccentColor = Color3.fromRGB(46, 119, 255),
-        OutlineColor = Color3.fromRGB(28, 28, 28),
+        BackgroundColor = Color3.fromRGB(14, 14, 16),
+        MainColor = Color3.fromRGB(21, 21, 23),
+        AccentColor = Color3.fromRGB(84, 122, 255),
+        OutlineColor = Color3.fromRGB(33, 33, 35),
         FontColor = Color3.new(1, 1, 1),
         Font = Font.fromEnum(Enum.Font.Gotham),
         
-        TopBarGradientEnabled = true,
+        TopBarGradientEnabled = false,
         TopBarGradientDarkColor = Color3.fromRGB(8, 14, 38),
         TopBarGradientLightColor = Color3.fromRGB(42, 124, 255),
         TopBarGradientRotation = 25,
@@ -320,7 +320,7 @@ local Templates = {
         Resizable = true,
         SearchbarSize = UDim2.fromScale(1, 1),
         GlobalSearch = false,
-        CornerRadius = 8,
+        CornerRadius = 6,
         NotifySide = "Right",
         ShowCustomCursor = true,
         Font = Enum.Font.Gotham,
@@ -6371,14 +6371,14 @@ function Library:CreateWindow(WindowInfo)
     local IsCompact = WindowInfo.SidebarCompacted
     local LastExpandedWidth = InitialLeftWidth
     local Layout = {
-        TopBarHeight = 58,
+        TopBarHeight = 50,
         BottomBarHeight = 20,
-        SidebarTopGap = 10,
+        SidebarTopGap = 6,
         SidebarSidePadding = 8,
-        ContentPadding = 8,
-        RightBarInset = 14,
-        SearchWidthRatio = 0.48,
-        SearchCorner = 16,
+        ContentPadding = 6,
+        RightBarInset = 16,
+        SearchWidthRatio = 0.42,
+        SearchCorner = 14,
     }
 
     do
@@ -6581,7 +6581,7 @@ function Library:CreateWindow(WindowInfo)
 
         CurrentTabInfo = New("Frame", {
             Size = UDim2.fromScale(WindowInfo.DisableSearch and 1 or (1 - Layout.SearchWidthRatio), 1),
-            Visible = true,
+            Visible = false,
             BackgroundTransparency = 1,
             Parent = RightWrapper,
         })
@@ -6611,7 +6611,7 @@ function Library:CreateWindow(WindowInfo)
             Size = UDim2.fromScale(1, 0),
             AutomaticSize = Enum.AutomaticSize.Y,
             Text = "All Elements",
-            TextSize = 16,
+            TextSize = 14,
             FontFace = Font.fromEnum(Enum.Font.GothamBold),
             TextXAlignment = Enum.TextXAlignment.Left,
             Parent = CurrentTabInfo,
@@ -6623,7 +6623,7 @@ function Library:CreateWindow(WindowInfo)
             AutomaticSize = Enum.AutomaticSize.Y,
             Text = "Showcasing every UI element",
             TextWrapped = true,
-            TextSize = 12,
+            TextSize = 11,
             TextXAlignment = Enum.TextXAlignment.Left,
             TextTransparency = 0.5,
             Parent = CurrentTabInfo,
@@ -6632,7 +6632,7 @@ function Library:CreateWindow(WindowInfo)
         SearchBox = New("TextBox", {
             BackgroundColor3 = "MainColor",
             PlaceholderText = "Search sidebar & tabs...",
-            Size = UDim2.fromScale(WindowInfo.DisableSearch and 0 or Layout.SearchWidthRatio, 1),
+            Size = WindowInfo.SearchbarSize,
             TextScaled = false,
             TextSize = 13,
             TextXAlignment = Enum.TextXAlignment.Left,
@@ -6653,7 +6653,7 @@ function Library:CreateWindow(WindowInfo)
         )
         New("UIPadding", {
             PaddingBottom = UDim.new(0, 8),
-            PaddingLeft = UDim.new(0, 30),
+            PaddingLeft = UDim.new(0, 28),
             PaddingRight = UDim.new(0, 8),
             PaddingTop = UDim.new(0, 8),
             Parent = SearchBox,
@@ -6928,12 +6928,18 @@ function Library:CreateWindow(WindowInfo)
     function Window:ShowTabInfo(Name, Description)
         CurrentTabLabel.Text = Name
         CurrentTabDescription.Text = Description and Description ~= "" and Description or "Showcasing every UI element"
+        if IsDefaultSearchbarSize then
+            SearchBox.Size = UDim2.fromScale(Layout.SearchWidthRatio, 1)
+        end
         CurrentTabInfo.Visible = true
     end
     function Window:HideTabInfo()
-        CurrentTabInfo.Visible = true
+        CurrentTabInfo.Visible = false
         CurrentTabLabel.Text = "All Elements"
         CurrentTabDescription.Text = "Showcasing every UI element"
+        if IsDefaultSearchbarSize then
+            SearchBox.Size = UDim2.fromScale(1, 1)
+        end
     end
 
     function Window:AddTab(...)
@@ -6974,7 +6980,7 @@ function Library:CreateWindow(WindowInfo)
                     return Library:GetBetterColor(Library.Scheme.MainColor, 2)
                 end,
                 BackgroundTransparency = 0,
-                Size = UDim2.new(1, 0, 0, 36),
+                Size = UDim2.new(1, 0, 0, 34),
                 Text = "",
                 Parent = Tabs,
             })
@@ -6984,7 +6990,7 @@ function Library:CreateWindow(WindowInfo)
             table.insert(
                 Library.Corners,
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 14),
+                    CornerRadius = UDim.new(0, 10),
                     Parent = TabButton,
                 })
             )
@@ -7367,8 +7373,8 @@ function Library:CreateWindow(WindowInfo)
                         ImageColor3 = BoxIcon.Custom and "WhiteColor" or "FontColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
-                        Position = UDim2.fromOffset(10, 8),
-                        Size = UDim2.fromOffset(18, 18),
+                        Position = UDim2.fromOffset(6, 6),
+                        Size = UDim2.fromOffset(22, 22),
                         Parent = GroupboxHolder,
                     })
                 end
@@ -7376,35 +7382,34 @@ function Library:CreateWindow(WindowInfo)
                 GroupboxLabel = New("TextLabel", {
                     BackgroundTransparency = 1,
                     Position = UDim2.fromOffset(BoxIcon and 24 or 0, 0),
-                    Size = UDim2.new(1, 0, 0, 36),
+                    Size = UDim2.new(1, 0, 0, 34),
                     Text = Info.Name,
-                    TextSize = 14,
-                    FontFace = Font.fromEnum(Enum.Font.GothamSemibold),
+                    TextSize = 15,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     Parent = GroupboxHolder,
                 })
                 New("UIPadding", {
-                    PaddingLeft = UDim.new(0, 14),
-                    PaddingRight = UDim.new(0, 14),
+                    PaddingLeft = UDim.new(0, 12),
+                    PaddingRight = UDim.new(0, 12),
                     Parent = GroupboxLabel,
                 })
 
                 GroupboxContainer = New("Frame", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(0, 37),
-                    Size = UDim2.new(1, 0, 1, -37),
+                    Position = UDim2.fromOffset(0, 35),
+                    Size = UDim2.new(1, 0, 1, -35),
                     Parent = GroupboxHolder,
                 })
 
                 GroupboxList = New("UIListLayout", {
-                    Padding = UDim.new(0, 10),
+                    Padding = UDim.new(0, 8),
                     Parent = GroupboxContainer,
                 })
                 New("UIPadding", {
-                    PaddingBottom = UDim.new(0, 10),
-                    PaddingLeft = UDim.new(0, 10),
-                    PaddingRight = UDim.new(0, 10),
-                    PaddingTop = UDim.new(0, 10),
+                    PaddingBottom = UDim.new(0, 7),
+                    PaddingLeft = UDim.new(0, 7),
+                    PaddingRight = UDim.new(0, 7),
+                    PaddingTop = UDim.new(0, 7),
                     Parent = GroupboxContainer,
                 })
             end
@@ -7420,7 +7425,7 @@ function Library:CreateWindow(WindowInfo)
             }
 
             function Groupbox:Resize()
-                GroupboxHolder.Size = UDim2.new(1, 0, 0, (GroupboxList.AbsoluteContentSize.Y / Library.DPIScale) + 57)
+                GroupboxHolder.Size = UDim2.new(1, 0, 0, (GroupboxList.AbsoluteContentSize.Y / Library.DPIScale) + 49)
             end
 
             setmetatable(Groupbox, BaseGroupbox)
@@ -7478,7 +7483,7 @@ function Library:CreateWindow(WindowInfo)
 
                 TabboxButtons = New("Frame", {
                     BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 0, 36),
+                    Size = UDim2.new(1, 0, 0, 34),
                     Parent = TabboxHolder,
                 })
                 New("UIListLayout", {
@@ -7514,7 +7519,7 @@ function Library:CreateWindow(WindowInfo)
                 local Button = New("TextButton", {
                     BackgroundColor3 = "MainColor",
                     BackgroundTransparency = 0,
-                    Size = UDim2.fromOffset(0, 36),
+                    Size = UDim2.fromOffset(0, 34),
                     Text = "",
                     Parent = TabboxButtons,
                 })
@@ -7604,20 +7609,20 @@ function Library:CreateWindow(WindowInfo)
 
                 local Container = New("Frame", {
                     BackgroundTransparency = 1,
-                    Position = UDim2.fromOffset(0, 37),
-                    Size = UDim2.new(1, 0, 1, -37),
+                    Position = UDim2.fromOffset(0, 35),
+                    Size = UDim2.new(1, 0, 1, -35),
                     Visible = false,
                     Parent = TabboxHolder,
                 })
                 local List = New("UIListLayout", {
-                    Padding = UDim.new(0, 10),
+                    Padding = UDim.new(0, 8),
                     Parent = Container,
                 })
                 New("UIPadding", {
-                    PaddingBottom = UDim.new(0, 10),
-                    PaddingLeft = UDim.new(0, 10),
-                    PaddingRight = UDim.new(0, 10),
-                    PaddingTop = UDim.new(0, 10),
+                    PaddingBottom = UDim.new(0, 7),
+                    PaddingLeft = UDim.new(0, 7),
+                    PaddingRight = UDim.new(0, 7),
+                    PaddingTop = UDim.new(0, 7),
                     Parent = Container,
                 })
 
@@ -7679,7 +7684,7 @@ function Library:CreateWindow(WindowInfo)
                         return
                     end
 
-                    TabboxHolder.Size = UDim2.new(1, 0, 0, (List.AbsoluteContentSize.Y / Library.DPIScale) + 57)
+                    TabboxHolder.Size = UDim2.new(1, 0, 0, (List.AbsoluteContentSize.Y / Library.DPIScale) + 49)
                 end
 
                 function Tab:UpdateCorners()
@@ -7853,14 +7858,14 @@ function Library:CreateWindow(WindowInfo)
                     return Library:GetBetterColor(Library.Scheme.MainColor, 2)
                 end,
                 BackgroundTransparency = 0,
-                Size = UDim2.new(1, 0, 0, 36),
+                Size = UDim2.new(1, 0, 0, 34),
                 Text = "",
                 Parent = Tabs,
             })
             table.insert(
                 Library.Corners,
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 14),
+                    CornerRadius = UDim.new(0, 10),
                     Parent = TabButton,
                 })
             )
