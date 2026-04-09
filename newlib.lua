@@ -591,19 +591,25 @@ function library:window(properties)
         local title_gradient = library:create("UIGradient", {
             Parent = items["title"];
             Color = rgbseq{
-                rgbkey(0, rgb(102, 196, 255)),
-                rgbkey(0.5, rgb(150, 220, 255)),
-                rgbkey(1, rgb(102, 196, 255))
+                rgbkey(0, rgb(18, 42, 88)),
+                rgbkey(0.18, rgb(210, 245, 255)),
+                rgbkey(0.34, rgb(28, 62, 118)),
+                rgbkey(0.5, rgb(220, 248, 255)),
+                rgbkey(0.66, rgb(22, 52, 102)),
+                rgbkey(0.82, rgb(200, 238, 255)),
+                rgbkey(1, rgb(18, 42, 88))
             };
-            Rotation = 0;
-            Offset = vec2(-1, 0);
+            Rotation = 18;
+            Offset = vec2(0, 0);
         })
 
-        tween_service:Create(
-            title_gradient,
-            TweenInfo.new(2.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true),
-            { Offset = vec2(1, 0) }
-        ):Play()
+        library:connection(run.RenderStepped, function()
+            if not title_gradient or not title_gradient.Parent then
+                return
+            end
+            local t = tick()
+            title_gradient.Offset = vec2(math.sin(t * 1.05) * 1.45, math.sin(t * 0.55) * 0.06)
+        end)
         
         items[ "multi_holder" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
@@ -1158,7 +1164,7 @@ function library:column(properties)
             BackgroundTransparency = 1;
             Name = "\0";
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(0, 0, cfg.size, 0);
+            Size = dim2(cfg.size, 0, 1, 0);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255)
         });
@@ -1175,7 +1181,7 @@ function library:sub_tab(properties)
             Parent = self.items[ "tab" ];
             BackgroundTransparency = 1;
             Name = "\0";
-            Size = dim2(0,0,cfg.size,0);
+            Size = dim2(1, 0, cfg.size, 0);
             BorderColor3 = rgb(0, 0, 0);
             BorderSizePixel = 0;
             Visible = true;
@@ -1202,7 +1208,7 @@ function library:section(properties)
             Name = "\0";
             Parent = self.items[ "column" ];
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(0, 0, cfg.size, -3);
+            Size = dim2(1, 0, cfg.size, -3);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(25, 25, 29)
         });
