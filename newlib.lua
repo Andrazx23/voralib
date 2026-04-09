@@ -474,14 +474,21 @@ function library:resolve_icon(icon_value)
 
     local prefix, name = icon_value:match("^(%w+):(.+)$")
     if prefix and name then
+        prefix = string.lower(prefix)
+        local key = string.lower(name):gsub("_", "-")
         if prefix == "lucide" then
-            return icon_cache.lucide[name] or icon_value
+            return icon_cache.lucide[key] or icon_cache.lucide[name] or icon_value
         elseif prefix == "solar" then
-            return icon_cache.solar[name] or icon_value
+            return icon_cache.solar[key] or icon_cache.solar[name] or icon_value
         end
     end
 
-    return icon_cache.lucide[icon_value] or icon_cache.solar[icon_value] or icon_value
+    local normalized = string.lower(icon_value):gsub("_", "-")
+    return icon_cache.lucide[normalized]
+        or icon_cache.lucide[icon_value]
+        or icon_cache.solar[normalized]
+        or icon_cache.solar[icon_value]
+        or icon_value
 end
 
 function library:connection(signal, callback)
@@ -570,6 +577,23 @@ local function window_resolve_rbx_image(s, default_id)
         return "rbxassetid://" .. s
     end
     return nil
+end
+
+local function normalize_icon_value(icon_value, fallback)
+    local icon = icon_value
+    if type(icon) ~= "string" or icon == "" then
+        icon = fallback or "lucide:layout-dashboard"
+    end
+    if string.find(icon, "^%d+$") then
+        return "rbxassetid://" .. icon
+    end
+    if string.find(icon, "^https?://") or string.find(icon, "^rbxassetid://") then
+        return icon
+    end
+    if string.find(icon, ":") == nil then
+        return "lucide:" .. icon
+    end
+    return icon
 end
 
 function library:window(properties)
@@ -673,7 +697,7 @@ function library:window(properties)
 
         local title_row_h = 72
         
-        items[ "button_holder" ] = library:create( "Frame" , {
+        items[ "button_holder" ] = library:create( "ScrollingFrame" , {
             Parent = items[ "side_frame" ];
             Name = "\0";
             BackgroundTransparency = 1;
@@ -681,6 +705,11 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, 0, 1, -title_row_h);
             BorderSizePixel = 0;
+            Active = true;
+            ScrollBarThickness = 2;
+            ScrollBarImageColor3 = rgb(44, 44, 46);
+            AutomaticCanvasSize = Enum.AutomaticSize.Y;
+            CanvasSize = dim2(0, 0, 0, 0);
             BackgroundColor3 = rgb(255, 255, 255)
         }); cfg.button_holder = items[ "button_holder" ];
         
@@ -1082,7 +1111,7 @@ function library:tab(properties)
     local win_cm = self.content_margin or (win_sw + 20)
     local cfg = {
         name = properties.name or properties.Name or "visuals"; 
-        icon = properties.icon or properties.Icon or "http://www.roblox.com/asset/?id=6034767608";
+        icon = normalize_icon_value(properties.icon or properties.Icon, "lucide:layout-dashboard");
         tabs = properties.tabs or properties.Tabs or {"Main", "Misc.", "Settings"};
         default_page_subtitle = properties.subtitle or properties.Subtitle or "";
         page_subtitles = properties.pageSubtitles or properties.page_subtitles or {};
@@ -1131,7 +1160,7 @@ function library:tab(properties)
             BorderColor3 = rgb(0, 0, 0);
             Parent = items[ "button" ];
             AnchorPoint = vec2(0, 0.5);
-            Image = library:resolve_icon(cfg.icon) or "http://www.roblox.com/asset/?id=6034767608";
+            Image = library:resolve_icon(cfg.icon) or normalize_icon_value(cfg.icon, "rbxassetid://6034767608");
             BackgroundTransparency = 1;
             Position = dim2(0, 10, 0.5, 0);
             Name = "\0";
@@ -1161,7 +1190,7 @@ function library:tab(properties)
         library:create( "UICorner" , { Parent = items[ "button" ]; CornerRadius = dim(0, 999) });
         library:create( "UIStroke" , { Color = rgb(23, 23, 29); Parent = items[ "button" ]; Enabled = true; Transparency = 0.45; ApplyStrokeMode = Enum.ApplyStrokeMode.Border });
 
-        items[ "menu_dropdown_holder" ] = library:create( "Frame" , {
+        items[ "menu_dropdown_holder" ] = library:create( "ScrollingFrame" , {
             Parent = library.cache;
             BackgroundTransparency = 1;
             Name = "\0";
@@ -1169,6 +1198,12 @@ function library:tab(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, 0, 1, 0);
             BorderSizePixel = 0;
+            Active = true;
+            ScrollingDirection = Enum.ScrollingDirection.X;
+            ScrollBarThickness = 2;
+            ScrollBarImageColor3 = rgb(44, 44, 46);
+            AutomaticCanvasSize = Enum.AutomaticSize.X;
+            CanvasSize = dim2(0, 0, 0, 0);
             BackgroundColor3 = rgb(255, 255, 255)
         });
 
