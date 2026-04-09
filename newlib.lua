@@ -214,14 +214,14 @@ local Library = {
     OriginalMinSize = Vector2.new(480, 360),
     MinSize = Vector2.new(480, 360),
     DPIScale = 1,
-    CornerRadius = 6,
+    CornerRadius = 10,
     CornerRadiusDropdown = false, -- Temporary
 
     IsLightTheme = false,
     Scheme = {
         BackgroundColor = Color3.fromRGB(14, 14, 16),
         MainColor = Color3.fromRGB(21, 21, 23),
-        AccentColor = Color3.fromRGB(84, 122, 255),
+        AccentColor = Color3.fromRGB(95, 130, 255),
         OutlineColor = Color3.fromRGB(33, 33, 35),
         FontColor = Color3.new(1, 1, 1),
         Font = Font.fromEnum(Enum.Font.Gotham),
@@ -320,7 +320,7 @@ local Templates = {
         Resizable = true,
         SearchbarSize = UDim2.fromScale(1, 1),
         GlobalSearch = false,
-        CornerRadius = 6,
+        CornerRadius = 10,
         NotifySide = "Right",
         ShowCustomCursor = true,
         Font = Enum.Font.Gotham,
@@ -6360,6 +6360,7 @@ function Library:CreateWindow(WindowInfo)
     local CurrentTabInfo
     local CurrentTabLabel
     local CurrentTabDescription
+    local SidebarHeader
     local ResizeButton
     local Tabs
     local Container
@@ -6371,14 +6372,15 @@ function Library:CreateWindow(WindowInfo)
     local IsCompact = WindowInfo.SidebarCompacted
     local LastExpandedWidth = InitialLeftWidth
     local Layout = {
-        TopBarHeight = 50,
-        BottomBarHeight = 20,
-        SidebarTopGap = 6,
+        TopBarHeight = 48,
+        BottomBarHeight = 18,
+        SidebarTopGap = 34,
         SidebarSidePadding = 8,
         ContentPadding = 6,
         RightBarInset = 16,
-        SearchWidthRatio = 0.42,
-        SearchCorner = 14,
+        SearchWidthRatio = 0.44,
+        SearchCorner = 999,
+        SidebarHeaderHeight = 24,
     }
 
     do
@@ -6558,7 +6560,7 @@ function Library:CreateWindow(WindowInfo)
             BackgroundTransparency = 1,
             Size = UDim2.new(0, X, 1, 0),
             Text = WindowInfo.Title,
-            TextSize = 20,
+            TextSize = 16,
             Parent = TitleHolder,
         })
 
@@ -6778,6 +6780,16 @@ function Library:CreateWindow(WindowInfo)
             ),
             Parent = MainFrame,
         })
+        SidebarHeader = New("TextLabel", {
+            BackgroundTransparency = 1,
+            Position = UDim2.fromOffset(Layout.SidebarSidePadding + 2, Layout.TopBarHeight + 8),
+            Size = UDim2.new(0, InitialLeftWidth - (Layout.SidebarSidePadding * 2) - 4, 0, Layout.SidebarHeaderHeight),
+            Text = "Demo Menu",
+            TextSize = 12,
+            TextTransparency = 0.45,
+            TextXAlignment = Enum.TextXAlignment.Left,
+            Parent = MainFrame,
+        })
         New("UIListLayout", {
             Padding = UDim.new(0, 8),
             Parent = Tabs,
@@ -6909,6 +6921,7 @@ function Library:CreateWindow(WindowInfo)
 
         TitleHolder.Size = UDim2.new(0, Width, 1, 0)
         RightWrapper.Size = UDim2.new(1, -Width - 57 - 1, 1, -Layout.RightBarInset)
+        SidebarHeader.Size = UDim2.new(0, Width - (Layout.SidebarSidePadding * 2) - 4, 0, Layout.SidebarHeaderHeight)
         Tabs.Size = UDim2.new(
             0,
             Width,
@@ -6980,7 +6993,7 @@ function Library:CreateWindow(WindowInfo)
                     return Library:GetBetterColor(Library.Scheme.MainColor, 2)
                 end,
                 BackgroundTransparency = 0,
-                Size = UDim2.new(1, 0, 0, 34),
+                Size = UDim2.new(1, 0, 0, 32),
                 Text = "",
                 Parent = Tabs,
             })
@@ -6990,7 +7003,7 @@ function Library:CreateWindow(WindowInfo)
             table.insert(
                 Library.Corners,
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 10),
+                    CornerRadius = UDim.new(1, 0),
                     Parent = TabButton,
                 })
             )
@@ -7007,7 +7020,7 @@ function Library:CreateWindow(WindowInfo)
                 Position = UDim2.fromOffset(30, 0),
                 Size = UDim2.new(1, -30, 1, 0),
                 Text = Name,
-                TextSize = 16,
+                TextSize = 14,
                 TextTransparency = 0.25,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Visible = not IsCompact,
@@ -7048,7 +7061,7 @@ function Library:CreateWindow(WindowInfo)
                 CanvasSize = UDim2.fromScale(0, 0),
                 ScrollBarImageTransparency = 1,
                 ScrollBarThickness = 0,
-                Size = UDim2.new(0.5, -4, 1, 0),
+                Size = UDim2.new(0.53, -4, 1, 0),
                 Parent = TabContainer,
             })
             New("UIListLayout", {
@@ -7083,7 +7096,7 @@ function Library:CreateWindow(WindowInfo)
                 Position = UDim2.fromScale(1, 0),
                 ScrollBarImageTransparency = 1,
                 ScrollBarThickness = 0,
-                Size = UDim2.new(0.5, -4, 1, 0),
+                Size = UDim2.new(0.47, -4, 1, 0),
                 Parent = TabContainer,
             })
             New("UIListLayout", {
@@ -7751,7 +7764,7 @@ function Library:CreateWindow(WindowInfo)
             end
 
             TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundColor3 = Library.Scheme.AccentColor,
+                BackgroundColor3 = Library:GetBetterColor(Library.Scheme.AccentColor, -10),
             }):Play()
             TweenService:Create(TabLabel, Library.TweenInfo, {
                 TextTransparency = 0,
@@ -7858,14 +7871,14 @@ function Library:CreateWindow(WindowInfo)
                     return Library:GetBetterColor(Library.Scheme.MainColor, 2)
                 end,
                 BackgroundTransparency = 0,
-                Size = UDim2.new(1, 0, 0, 34),
+                Size = UDim2.new(1, 0, 0, 32),
                 Text = "",
                 Parent = Tabs,
             })
             table.insert(
                 Library.Corners,
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 10),
+                    CornerRadius = UDim.new(1, 0),
                     Parent = TabButton,
                 })
             )
@@ -7882,7 +7895,7 @@ function Library:CreateWindow(WindowInfo)
                 Position = UDim2.fromOffset(30, 0),
                 Size = UDim2.new(1, -30, 1, 0),
                 Text = Name,
-                TextSize = 16,
+                TextSize = 14,
                 TextTransparency = 0.25,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 Visible = not IsCompact,
@@ -8030,7 +8043,7 @@ function Library:CreateWindow(WindowInfo)
             end
 
             TweenService:Create(TabButton, Library.TweenInfo, {
-                BackgroundColor3 = Library.Scheme.AccentColor,
+                BackgroundColor3 = Library:GetBetterColor(Library.Scheme.AccentColor, -10),
             }):Play()
             TweenService:Create(TabLabel, Library.TweenInfo, {
                 TextTransparency = 0,
