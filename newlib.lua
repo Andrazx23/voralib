@@ -192,7 +192,7 @@ local Library = {
     Scheme = {
         BackgroundColor = Color3.fromRGB(15, 15, 15),
         MainColor = Color3.fromRGB(25, 25, 25),
-        AccentColor = Color3.fromRGB(0, 193, 255),
+        AccentColor = Color3.fromRGB(0, 133, 255),
         OutlineColor = Color3.fromRGB(4, 84, 102),
         FontColor = Color3.new(1, 1, 1),
         Font = Font.fromEnum(Enum.Font.Gotham),
@@ -2019,8 +2019,8 @@ function Library:Unload()
     Library.Unloaded = true
     ScreenGui:Destroy()
 
-    if game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("VinzHub_ToggleButton") then
-        game:GetService("Players").LocalPlayer.PlayerGui.VinzHub_ToggleButton:Destroy()
+    if game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("vorahub_ToggleButton") then
+        game:GetService("Players").LocalPlayer.PlayerGui.vorahub_ToggleButton:Destroy()
     end
 
     getgenv().Library = nil
@@ -7811,19 +7811,19 @@ function Library:CreateWindow(WindowInfo)
     end))
 
     -- Setup Persistent Toggle Button
-    if Players.LocalPlayer.PlayerGui:FindFirstChild("VinzHub_ToggleButton") then
-        Players.LocalPlayer.PlayerGui.VinzHub_ToggleButton:Destroy()
+    if Players.LocalPlayer.PlayerGui:FindFirstChild("vorahub_ToggleButton") then
+        Players.LocalPlayer.PlayerGui.vorahub_ToggleButton:Destroy()
     end
 
     local toggleButtonGui = Instance.new("ScreenGui")
-    toggleButtonGui.Name = "VinzHub_ToggleButton"
+    toggleButtonGui.Name = "vorahub_ToggleButton"
     toggleButtonGui.ResetOnSpawn = false
     toggleButtonGui.DisplayOrder = 100
     toggleButtonGui.Parent = Players.LocalPlayer.PlayerGui
 
     local toggleButton = Instance.new("ImageButton")
     toggleButton.Name = "ToggleButton"
-    toggleButton.Image = "rbxassetid://84117591993582"
+    toggleButton.Image = "rbxassetid://113154475025105"
     toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     toggleButton.Size = UDim2.fromOffset(50, 50)
     toggleButton.AnchorPoint = Vector2.new(1, 0.5)
