@@ -569,11 +569,27 @@ function library:load_config(config_json)
 end
 
 -- Library element functions
+local function window_resolve_rbx_image(s, default_id)
+    local def = "rbxassetid://" .. tostring(default_id)
+    if type(s) ~= "string" or s == "" then
+        return def
+    end
+    if string.find(s, "^rbxassetid://") or string.find(s, "^https?://") then
+        return s
+    end
+    if string.find(s, "^%d+$") then
+        return "rbxassetid://" .. s
+    end
+    return nil
+end
+
 function library:window(properties)
     local cfg = { 
         suffix = properties.suffix or properties.Suffix or "tech";
         name = properties.name or properties.Name or "nebula";
         game_name = properties.gameInfo or properties.game_info or properties.GameInfo or "Milenium for Counter-Strike: Global Offensive";
+        logo = properties.logo or properties.Logo or "116918679098324";
+        toggle_button_image = properties.toggleButtonImage or properties.toggle_ui_image or properties.ToggleUiImage or "113154475025105";
         size = properties.size or properties.Size or dim2(0, 700, 0, 565);
         selected_tab = nil;
         items = {};
@@ -609,22 +625,34 @@ function library:window(properties)
         library:create( "UICorner" , { Parent = items[ "main" ]; CornerRadius = dim(0, 10) });
         library:create( "UIStroke" , { Color = rgb(23, 23, 29); Parent = items[ "main" ]; ApplyStrokeMode = Enum.ApplyStrokeMode.Border });
 
+        local toggle_rbx = window_resolve_rbx_image(cfg.toggle_button_image, 113154475025105)
+            or "rbxassetid://113154475025105"
         items[ "open_close_button" ] = library:create( "TextButton" , {
             Parent = library[ "items" ];
             Name = "\0";
-            Text = "UI";
-            FontFace = fonts.font;
-            TextSize = 14;
-            TextColor3 = rgb(255, 255, 255);
+            Text = "";
             AutoButtonColor = false;
             AnchorPoint = vec2(0, 0.5);
             Position = dim2(0, 16, 0.5, 0);
-            Size = dim2(0, 34, 0, 34);
+            Size = dim2(0, 36, 0, 36);
             BorderSizePixel = 0;
-            BackgroundColor3 = themes.preset.accent;
-        }); library:apply_theme(items[ "open_close_button" ], "accent", "BackgroundColor3");
-        library:create( "UICorner" , { Parent = items[ "open_close_button" ]; CornerRadius = dim(0, 8) });
-        library:create( "UIStroke" , { Parent = items[ "open_close_button" ]; Color = rgb(23, 23, 29); Transparency = 0.35 });
+            BackgroundTransparency = 1;
+            BackgroundColor3 = rgb(14, 14, 16);
+        })
+        library:create( "UICorner" , { Parent = items[ "open_close_button" ]; CornerRadius = dim(0, 8) })
+        library:create( "UIStroke" , { Parent = items[ "open_close_button" ]; Color = rgb(23, 23, 29); Transparency = 0.4 });
+        items[ "open_close_button_icon" ] = library:create("ImageLabel", {
+            Parent = items[ "open_close_button" ];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Size = dim2(1, -4, 1, -4);
+            Position = dim2(0.5, 0, 0.5, 0);
+            AnchorPoint = vec2(0.5, 0.5);
+            Image = toggle_rbx;
+            ScaleType = Enum.ScaleType.Fit;
+            ImageColor3 = rgb(255, 255, 255);
+            BorderSizePixel = 0;
+        })
         
         items[ "side_frame" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
@@ -645,35 +673,70 @@ function library:window(properties)
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(21, 21, 23)
         });
+
+        local title_row_h = 72
         
         items[ "button_holder" ] = library:create( "Frame" , {
             Parent = items[ "side_frame" ];
             Name = "\0";
             BackgroundTransparency = 1;
-            Position = dim2(0, 0, 0, 60);
+            Position = dim2(0, 0, 0, title_row_h);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, 0, 1, -60);
+            Size = dim2(1, 0, 1, -title_row_h);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255)
         }); cfg.button_holder = items[ "button_holder" ];
         
         library:create( "UIListLayout" , { Parent = items[ "button_holder" ]; Padding = dim(0, 5); SortOrder = Enum.SortOrder.LayoutOrder });
-        library:create( "UIPadding" , { PaddingTop = dim(0, 16); PaddingBottom = dim(0, 36); Parent = items[ "button_holder" ]; PaddingRight = dim(0, 11); PaddingLeft = dim(0, 10) });
+        library:create( "UIPadding" , { PaddingTop = dim(0, 16); PaddingBottom = dim(0, 36); Parent = items[ "button_holder" ]; PaddingRight = dim(0, 11); PaddingLeft = dim(0, 10) })
+
+        items[ "title_row" ] = library:create("Frame", {
+            Parent = items[ "side_frame" ];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Size = dim2(1, 0, 0, title_row_h);
+            BorderSizePixel = 0;
+            BackgroundColor3 = rgb(255, 255, 255);
+        })
+
+        local header_rbx = window_resolve_rbx_image(cfg.logo, 116918679098324)
+        local header_img = header_rbx or (library:resolve_icon(cfg.logo) or "")
+        local header_is_rbx = header_rbx ~= nil
+        items[ "title_logo" ] = library:create("ImageLabel", {
+            Parent = items[ "title_row" ];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Size = dim2(0, 44, 0, 44);
+            Position = dim2(0, 10, 0.5, 0);
+            AnchorPoint = vec2(0, 0.5);
+            BorderSizePixel = 0;
+            Image = header_img;
+            ImageColor3 = header_is_rbx and rgb(255, 255, 255) or themes.preset.accent;
+            ScaleType = Enum.ScaleType.Fit;
+        })
+        if not header_is_rbx then
+            library:apply_theme(items[ "title_logo" ], "accent", "ImageColor3")
+        end
 
         items[ "title" ] = library:create( "TextLabel" , {
             FontFace = fonts.font;
             BorderColor3 = rgb(0, 0, 0);
-            Parent = items[ "side_frame" ];
+            Parent = items[ "title_row" ];
             Name = "\0";
             Text = string.format("%s %s", cfg.name, cfg.suffix);
             BackgroundTransparency = 1;
-            Size = dim2(1, 0, 0, 70);
+            Position = dim2(0, 60, 0.5, 0);
+            AnchorPoint = vec2(0, 0.5);
+            Size = dim2(1, -70, 0, 0);
             TextColor3 = rgb(255, 255, 255);
             BorderSizePixel = 0;
             RichText = false;
-            TextSize = 30;
+            TextSize = 26;
+            TextXAlignment = Enum.TextXAlignment.Left;
+            TextWrapped = true;
+            AutomaticSize = Enum.AutomaticSize.Y;
             BackgroundColor3 = rgb(255, 255, 255)
-        });
+        })
 
         local title_gradient = library:create("UIGradient", {
             Parent = items["title"];
@@ -702,11 +765,14 @@ function library:window(properties)
                 return
             end
             local t = tick()
-            title_gradient.Offset = vec2(math.sin(t * 0.28) * 1.4, 0)
+            title_gradient.Offset = vec2(math.sin(t * 0.35) * 1.6 + math.sin(t * 0.11) * 0.25, math.cos(t * 0.19) * 0.08)
         end)
         
-        -- Bar atas: judul + subtitle (ala NEMESIS) + sub-tab horizontal + search kanan
-        local top_bar_h = 72
+        -- Bar atas: judul + subtitle + sub-tab + search (lapang)
+        local search_w, search_h = 320, 40
+        local header_left_pad, header_gap, search_right_mar = 14, 18, 20
+        local header_reserve = header_left_pad + header_gap + search_w + search_right_mar
+        local top_bar_h = 78
         local content_bottom_pad = 10
         local content_height_inset = 25 + top_bar_h + content_bottom_pad
         items[ "multi_holder" ] = library:create( "Frame" , {
@@ -727,8 +793,8 @@ function library:window(properties)
             Name = "\0";
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
-            Position = dim2(0, 12, 0, 6);
-            Size = dim2(1, -326, 1, -12);
+            Position = dim2(0, header_left_pad, 0, 8);
+            Size = dim2(1, -header_reserve, 1, -16);
             BackgroundColor3 = rgb(255, 255, 255);
         })
         library:create("UIListLayout", {
@@ -783,12 +849,12 @@ function library:window(properties)
             Parent = items[ "multi_holder" ];
             Name = "\0";
             AnchorPoint = vec2(1, 0.5);
-            Position = dim2(1, -14, 0.5, 0);
-            Size = dim2(0, 300, 0, 36);
+            Position = dim2(1, -search_right_mar, 0.5, 0);
+            Size = dim2(0, search_w, 0, search_h);
             BackgroundColor3 = rgb(20, 20, 24);
             BorderSizePixel = 0;
         })
-        library:create("UICorner", { Parent = items[ "search_holder" ]; CornerRadius = dim(0, 18) })
+        library:create("UICorner", { Parent = items[ "search_holder" ]; CornerRadius = dim(0, math.floor(search_h / 2)) })
         library:create("UIStroke", {
             Parent = items[ "search_holder" ];
             Color = rgb(48, 48, 56);
@@ -801,8 +867,8 @@ function library:window(properties)
             Parent = items[ "search_holder" ];
             Name = "\0";
             BackgroundTransparency = 1;
-            Size = dim2(0, 17, 0, 17);
-            Position = dim2(0, 12, 0.5, 0);
+            Size = dim2(0, 18, 0, 18);
+            Position = dim2(0, 14, 0.5, 0);
             AnchorPoint = vec2(0, 0.5);
             Image = library:resolve_icon("lucide:search") or "";
             ImageColor3 = rgb(125, 125, 135);
@@ -813,11 +879,11 @@ function library:window(properties)
             Parent = items[ "search_holder" ];
             Name = "\0";
             BackgroundTransparency = 1;
-            Size = dim2(1, -48, 1, -6);
-            Position = dim2(0, 38, 0, 3);
+            Size = dim2(1, -54, 1, -12);
+            Position = dim2(0, 42, 0, 6);
             BorderSizePixel = 0;
             Text = "";
-            PlaceholderText = "Search tabs/groups...";
+            PlaceholderText = "Search sidebar & tabs…";
             PlaceholderColor3 = rgb(105, 105, 115);
             TextColor3 = rgb(210, 210, 218);
             FontFace = fonts.small;
@@ -825,6 +891,59 @@ function library:window(properties)
             TextXAlignment = Enum.TextXAlignment.Left;
             ClearTextOnFocus = false;
         })
+
+        local function ui_text_for_search(inst)
+            if inst:IsA("TextLabel") then
+                return inst.Text or ""
+            end
+            if inst:IsA("TextButton") then
+                for _, c in ipairs(inst:GetChildren()) do
+                    if c:IsA("TextLabel") and c.Text ~= "" then
+                        return c.Text
+                    end
+                end
+            end
+            return ""
+        end
+
+        function cfg.apply_search_filter()
+            local box = items[ "window_search" ]
+            if not box then
+                return
+            end
+            local q = string.lower(string.gsub(box.Text or "", "^%s+", ""))
+            local function matches(s)
+                if q == "" then
+                    return true
+                end
+                if type(s) ~= "string" or s == "" then
+                    return false
+                end
+                return string.find(string.lower(s), q, 1, true) ~= nil
+            end
+            if items[ "button_holder" ] then
+                for _, ch in ipairs(items[ "button_holder" ]:GetChildren()) do
+                    if ch:IsA("TextButton") or ch:IsA("TextLabel") then
+                        ch.Visible = matches(ui_text_for_search(ch))
+                    end
+                end
+            end
+            local st = cfg.selected_tab
+            if st and st[ 5 ] and st[ 5 ].Parent then
+                for _, ch in ipairs(st[ 5 ]:GetChildren()) do
+                    if ch:IsA("TextButton") then
+                        ch.Visible = matches(ui_text_for_search(ch))
+                    end
+                end
+            end
+        end
+
+        items[ "window_search" ]:GetPropertyChangedSignal("Text"):Connect(function()
+            pcall(cfg.apply_search_filter)
+        end)
+        items[ "window_search" ].FocusLost:Connect(function()
+            pcall(cfg.apply_search_filter)
+        end)
         
         library:create( "Frame" , {
             AnchorPoint = vec2(0, 1);
@@ -945,7 +1064,10 @@ function library:window(properties)
 
     items["open_close_button"].MouseButton1Click:Connect(function()
         items["main"].Visible = not items["main"].Visible
-        items["open_close_button"].Text = items["main"].Visible and "UI" or "+"
+        local ico = items["open_close_button_icon"]
+        if ico then
+            ico.ImageTransparency = items["main"].Visible and 0 or 0.35
+        end
     end)
 
     function cfg.toggle_menu(bool) 
@@ -969,8 +1091,8 @@ function library:tab(properties)
     } 
 
     local items = cfg.items; do 
-        local hinset = self.content_height_inset or (25 + 72 + 10)
-        local top_y = self.top_bar_h or 72
+        local hinset = self.content_height_inset or (25 + 78 + 10)
+        local top_y = self.top_bar_h or 78
         items[ "tab_holder" ] = library:create( "Frame" , {
             Parent = library.cache;
             Name = "\0";
@@ -1182,7 +1304,7 @@ function library:tab(properties)
     end 
 
     function cfg.open_tab() 
-        local hinset = self.content_height_inset or (25 + 72 + 10)
+        local hinset = self.content_height_inset or (25 + 78 + 10)
         local selected_tab = self.selected_tab
         if selected_tab then 
             if selected_tab[ 5 ] then
@@ -1233,6 +1355,9 @@ function library:tab(properties)
             items[ "tab_holder" ];
             items[ "menu_dropdown_holder" ];
         }
+        if self.apply_search_filter then
+            task.defer(self.apply_search_filter)
+        end
         library:close_element()
     end
 
