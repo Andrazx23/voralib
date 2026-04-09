@@ -578,8 +578,8 @@ function library:window(properties)
     local default_w = is_touch_ui and floor(vw * 0.92 - 16) or floor(vw * 0.58)
     local default_h = is_touch_ui and floor(vh * 0.62 - gui_offset * 0.5) or floor(vh * 0.56)
     -- Desktop cap supaya tidak terlalu panjang di monitor lebar.
-    default_w = clamp(default_w, 300, is_touch_ui and (vw - 8) or 760)
-    default_h = clamp(default_h, 280, is_touch_ui and (vh - 8) or 460)
+    default_w = clamp(default_w, 300, is_touch_ui and (vw - 8) or 820)
+    default_h = clamp(default_h, 280, is_touch_ui and (vh - 8) or 500)
     local sidebar_w = is_touch_ui and 148 or 196
     local content_margin = sidebar_w + 20
     local search_w_ui = is_touch_ui and 200 or 320
