@@ -1,4 +1,249 @@
 --[[
+    VoraHub NewLib (Rewrite)
+    - UI base from local library implementation (oldlib.lua)
+    - Optional function bridge from Obsidian Library
+    - Optional addon bridge for ThemeManager + SaveManager
+]]
+
+local getgenv_fn = getgenv or function()
+    return shared
+end
+
+local function file_exists(path)
+    if not isfile then
+        return false
+    end
+    local ok, out = pcall(isfile, path)
+    return ok and out == true
+end
+
+local function safe_read(path)
+    if not readfile then
+        return nil
+    end
+    local ok, out = pcall(readfile, path)
+    if ok and type(out) == "string" and out ~= "" then
+        return out
+    end
+    return nil
+end
+
+local function safe_load_chunk(source, chunkname)
+    if type(source) ~= "string" or source == "" or type(loadstring) ~= "function" then
+        return nil
+    end
+
+    local ok, fn = pcall(loadstring, source, chunkname)
+    if ok and type(fn) == "function" then
+        return fn
+    end
+    return nil
+end
+
+local function load_chunk_from_paths(paths)
+    if type(paths) ~= "table" then
+        return nil
+    end
+
+    for _, path in ipairs(paths) do
+        if file_exists(path) then
+            local source = safe_read(path)
+            local fn = safe_load_chunk(source, "@" .. path)
+            if fn then
+                return fn, path
+            end
+        end
+    end
+    return nil
+end
+
+local function load_chunk_from_urls(urls)
+    if type(urls) ~= "table" then
+        return nil
+    end
+    if not game or type(game.HttpGet) ~= "function" then
+        return nil
+    end
+
+    for _, url in ipairs(urls) do
+        local ok_fetch, source = pcall(function()
+            return game:HttpGet(url)
+        end)
+        if ok_fetch and type(source) == "string" and source ~= "" then
+            local fn = safe_load_chunk(source, "@" .. url)
+            if fn then
+                return fn, url
+            end
+        end
+    end
+    return nil
+end
+
+local function run_library_chunk(chunk)
+    if type(chunk) ~= "function" then
+        return nil
+    end
+    local ok, out = pcall(chunk)
+    if ok and type(out) == "table" then
+        return out
+    end
+    return nil
+end
+
+local function load_ui_library()
+    local fn =
+        load_chunk_from_paths({
+            "source for vorahub/lib/oldlib.lua",
+            "lib/oldlib.lua",
+            "oldlib.lua",
+        })
+
+    if not fn then
+        return nil
+    end
+    return run_library_chunk(fn)
+end
+
+local function load_obsidian_library()
+    local fn =
+        load_chunk_from_paths({
+            "source for vorahub/obsidian/Library.lua",
+            "obsidian/Library.lua",
+            "Library.lua",
+        })
+
+    if not fn then
+        fn =
+            load_chunk_from_urls({
+                "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/Library.lua",
+            })
+    end
+
+    if not fn then
+        return nil
+    end
+    return run_library_chunk(fn)
+end
+
+local function load_obsidian_addon(name)
+    local fn =
+        load_chunk_from_paths({
+            "source for vorahub/obsidian/addons/" .. name .. ".lua",
+            "obsidian/addons/" .. name .. ".lua",
+            "addons/" .. name .. ".lua",
+        })
+
+    if not fn then
+        fn =
+            load_chunk_from_urls({
+                "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/addons/" .. name .. ".lua",
+            })
+    end
+
+    if not fn then
+        return nil
+    end
+
+    local ok, addon = pcall(fn)
+    if ok then
+        return addon
+    end
+    return nil
+end
+
+local library = load_ui_library()
+assert(type(library) == "table", "newlib rewrite failed: cannot load UI base (oldlib.lua)")
+
+library.__index = library
+library._meta = {
+    name = "VoraHub NewLib Rewrite",
+    version = "2.0.0",
+}
+
+library.obsidian = nil
+library.obsidian_addons = {}
+
+function library:load_obsidian_bridge()
+    if type(self.obsidian) == "table" then
+        return self.obsidian
+    end
+
+    local obsidian = load_obsidian_library()
+    if type(obsidian) ~= "table" then
+        return nil
+    end
+
+    self.obsidian = obsidian
+
+    -- Copy only missing functions: keep UI API from base library.
+    for key, value in pairs(obsidian) do
+        if type(value) == "function" and self[key] == nil then
+            self[key] = function(_, ...)
+                return value(obsidian, ...)
+            end
+        end
+    end
+
+    -- Optional compatibility aliases.
+    if type(self.window) ~= "function" and type(self.CreateWindow) == "function" then
+        function self:window(options)
+            return self:CreateWindow(options or {})
+        end
+    end
+
+    if type(self.notify) ~= "function" and type(obsidian.Notify) == "function" then
+        function self:notify(...)
+            return obsidian:Notify(...)
+        end
+    end
+
+    return obsidian
+end
+
+function library:load_obsidian_addons()
+    local obsidian = self:load_obsidian_bridge()
+    if type(obsidian) ~= "table" then
+        return nil
+    end
+
+    for _, addon_name in ipairs({ "ThemeManager", "SaveManager" }) do
+        if self.obsidian_addons[addon_name] == nil then
+            local addon = load_obsidian_addon(addon_name)
+            if type(addon) == "table" and type(addon.SetLibrary) == "function" then
+                pcall(function()
+                    addon:SetLibrary(obsidian)
+                end)
+            end
+            self.obsidian_addons[addon_name] = addon
+        end
+    end
+
+    return self.obsidian_addons
+end
+
+function library:get_obsidian_addon(name)
+    if type(name) ~= "string" or name == "" then
+        return nil
+    end
+    if self.obsidian_addons[name] ~= nil then
+        return self.obsidian_addons[name]
+    end
+    self:load_obsidian_addons()
+    return self.obsidian_addons[name]
+end
+
+-- Auto-init bridge/addons for immediate support.
+pcall(function()
+    library:load_obsidian_bridge()
+    library:load_obsidian_addons()
+end)
+
+local env = getgenv_fn()
+env.library = library
+env.Library = library
+
+return library
+--[[
     Milenium Library FIXED
     -> Config System Fixed (Save/Load/Auto-Folder)
     -> No more parse errors or missing functions
