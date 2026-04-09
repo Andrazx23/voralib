@@ -576,15 +576,32 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Parent = items[ "side_frame" ];
             Name = "\0";
-            Text = string.format('<u>%s</u><font color = "rgb(255, 255, 255)">%s</font>', cfg.name, cfg.suffix);
+            Text = string.format("%s %s", cfg.name, cfg.suffix);
             BackgroundTransparency = 1;
             Size = dim2(1, 0, 0, 70);
-            TextColor3 = themes.preset.accent;
+            TextColor3 = rgb(255, 255, 255);
             BorderSizePixel = 0;
-            RichText = true;
+            RichText = false;
             TextSize = 30;
             BackgroundColor3 = rgb(255, 255, 255)
-        }); library:apply_theme(items[ "title" ], "accent", "TextColor3");
+        });
+
+        local title_gradient = library:create("UIGradient", {
+            Parent = items["title"];
+            Color = rgbseq{
+                rgbkey(0, rgb(102, 196, 255)),
+                rgbkey(0.5, rgb(150, 220, 255)),
+                rgbkey(1, rgb(102, 196, 255))
+            };
+            Rotation = 0;
+            Offset = vec2(-1, 0);
+        })
+
+        tween_service:Create(
+            title_gradient,
+            TweenInfo.new(2.2, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1, true),
+            { Offset = vec2(1, 0) }
+        ):Play()
         
         items[ "multi_holder" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
@@ -729,11 +746,11 @@ function library:window(properties)
             SortOrder = Enum.SortOrder.LayoutOrder;
         })
 
-        local function create_control(text, bg)
+        local function create_control(icon_name, bg)
             local btn = library:create("TextButton", {
                 Parent = control_holder;
                 Name = "\0";
-                Text = text;
+                Text = "";
                 FontFace = fonts.font;
                 TextSize = 14;
                 TextColor3 = rgb(255, 255, 255);
@@ -743,12 +760,24 @@ function library:window(properties)
                 BackgroundColor3 = bg;
             })
             library:create("UICorner", { Parent = btn; CornerRadius = dim(0, 6) })
+            local icon = library:create("ImageLabel", {
+                Parent = btn;
+                Name = "\0";
+                BackgroundTransparency = 1;
+                AnchorPoint = vec2(0.5, 0.5);
+                Position = dim2(0.5, 0, 0.5, 0);
+                Size = dim2(0, 13, 0, 13);
+                BorderSizePixel = 0;
+                ImageColor3 = rgb(235, 235, 235);
+                Image = library:resolve_icon(icon_name) or "";
+            })
+            btn._icon = icon
             return btn
         end
 
-        local minimize_btn = create_control("-", rgb(36, 36, 40))
-        local maximize_btn = create_control("□", rgb(36, 36, 40))
-        local close_btn = create_control("×", rgb(130, 40, 40))
+        local minimize_btn = create_control("lucide:minimize", rgb(36, 36, 40))
+        local maximize_btn = create_control("lucide:maximize", rgb(36, 36, 40))
+        local close_btn = create_control("lucide:x", rgb(130, 40, 40))
 
         local last_size = items["main"].Size
         local last_pos = items["main"].Position
@@ -764,16 +793,21 @@ function library:window(properties)
                 end
                 is_minimized = true
                 is_maximized = false
-                items["side_frame"].Visible = false
-                items["multi_holder"].Visible = false
-                items["info"].Visible = false
-                library:tween(items["main"], {Size = min_size}, Enum.EasingStyle.Quad, 0.25)
-                maximize_btn.Text = "□"
+                local hide_pos = dim2(0, last_pos.X.Offset, 0, camera.ViewportSize.Y + 20)
+                library:tween(items["main"], {Position = hide_pos}, Enum.EasingStyle.Quad, 0.25)
+                task.delay(0.27, function()
+                    if is_minimized and items["main"] then
+                        items["main"].Visible = false
+                    end
+                end)
+                if maximize_btn._icon then
+                    maximize_btn._icon.Image = library:resolve_icon("lucide:maximize") or maximize_btn._icon.Image
+                end
             else
                 is_minimized = false
-                items["side_frame"].Visible = true
-                items["multi_holder"].Visible = true
-                items["info"].Visible = true
+                local hide_pos = dim2(0, last_pos.X.Offset, 0, camera.ViewportSize.Y + 20)
+                items["main"].Visible = true
+                items["main"].Position = hide_pos
                 library:tween(items["main"], {Size = last_size, Position = last_pos}, Enum.EasingStyle.Quad, 0.25)
             end
         end
@@ -793,11 +827,15 @@ function library:window(properties)
                     Position = dim2(0, 12, 0, 12),
                     Size = dim2(0, vp.X - 24, 0, vp.Y - 24),
                 }, Enum.EasingStyle.Quad, 0.25)
-                maximize_btn.Text = "❐"
+                if maximize_btn._icon then
+                    maximize_btn._icon.Image = library:resolve_icon("lucide:maximize-2") or maximize_btn._icon.Image
+                end
             else
                 is_maximized = false
                 library:tween(items["main"], {Position = last_pos, Size = last_size}, Enum.EasingStyle.Quad, 0.25)
-                maximize_btn.Text = "□"
+                if maximize_btn._icon then
+                    maximize_btn._icon.Image = library:resolve_icon("lucide:maximize") or maximize_btn._icon.Image
+                end
             end
         end
 
@@ -851,7 +889,7 @@ function library:tab(properties)
             Text = "";
             Parent = self.items[ "button_holder" ];
             AutoButtonColor = false;
-            BackgroundTransparency = 0.82;
+            BackgroundTransparency = 0.9;
             Name = "\0";
             Size = dim2(1, 0, 0, 35);
             BorderSizePixel = 0;
@@ -875,7 +913,7 @@ function library:tab(properties)
         
         items[ "name" ] = library:create( "TextLabel" , {
             FontFace = fonts.font;
-            TextColor3 = rgb(72, 72, 73);
+            TextColor3 = rgb(108, 108, 114);
             BorderColor3 = rgb(0, 0, 0);
             Text = cfg.name;
             Parent = items[ "button" ];
@@ -993,16 +1031,16 @@ function library:tab(properties)
                 end
 
                 if page then
-                    library:tween(page.text, {TextColor3 = rgb(62, 62, 63)})
+                    library:tween(page.text, {TextColor3 = rgb(108, 108, 114)})
                     library:tween(page.accent, {BackgroundTransparency = 1})
-                    library:tween(page.button, {BackgroundTransparency = 1})
+                    library:tween(page.button, {BackgroundTransparency = 0.85, BackgroundColor3 = rgb(25, 25, 29)})
                     page.page.Visible = false
                     page.page.Parent = library[ "cache" ] 
                 end 
                 
                 library:tween(data.text, {TextColor3 = rgb(255, 255, 255)})
                 library:tween(data.accent, {BackgroundTransparency = 0})
-                library:tween(data.button, {BackgroundTransparency = 0})
+                library:tween(data.button, {BackgroundTransparency = 0.35})
                 library:tween(data.page, {Size = dim2(1, 0, 1, 0)}, Enum.EasingStyle.Quad, 0.4)
 
                 data.page.Visible = true
@@ -1010,6 +1048,18 @@ function library:tab(properties)
                 cfg.current_multi = data
                 library:close_element()
             end
+
+            multi_items[ "button" ].MouseEnter:Connect(function()
+                if cfg.current_multi ~= data then
+                    library:tween(multi_items["button"], {BackgroundTransparency = 0.7}, Enum.EasingStyle.Quad, 0.15)
+                end
+            end)
+
+            multi_items[ "button" ].MouseLeave:Connect(function()
+                if cfg.current_multi ~= data then
+                    library:tween(multi_items["button"], {BackgroundTransparency = 0.85}, Enum.EasingStyle.Quad, 0.15)
+                end
+            end)
 
             multi_items[ "button" ].MouseButton1Down:Connect(function() data.open_page() end)
             cfg.pages[#cfg.pages + 1] = setmetatable(data, library)
@@ -1025,9 +1075,9 @@ function library:tab(properties)
                 library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
                 selected_tab[ 4 ].Size = dim2(1, -216, 1, -101)
             end
-            library:tween(selected_tab[ 1 ], {BackgroundTransparency = 0.82, BackgroundColor3 = rgb(29, 29, 29)})
+            library:tween(selected_tab[ 1 ], {BackgroundTransparency = 0.9, BackgroundColor3 = rgb(29, 29, 29)})
             library:tween(selected_tab[ 2 ], {ImageColor3 = rgb(72, 72, 73)})
-            library:tween(selected_tab[ 3 ], {TextColor3 = rgb(72, 72, 73)})
+            library:tween(selected_tab[ 3 ], {TextColor3 = rgb(108, 108, 114)})
 
             selected_tab[ 4 ].Visible = false
             selected_tab[ 4 ].Parent = library[ "cache" ]
@@ -1035,7 +1085,7 @@ function library:tab(properties)
             selected_tab[ 5 ].Parent = library[ "cache" ]
         end
 
-        library:tween(items[ "button" ], {BackgroundTransparency = 0, BackgroundColor3 = themes.preset.accent})
+        library:tween(items[ "button" ], {BackgroundTransparency = 0.12, BackgroundColor3 = themes.preset.accent})
         library:tween(items[ "icon" ], {ImageColor3 = rgb(255, 255, 255)})
         library:tween(items[ "name" ], {TextColor3 = rgb(255, 255, 255)})
         library:tween(items[ "tab_holder" ], {Size = dim2(1, -196, 1, -81)}, Enum.EasingStyle.Quad, 0.4)
@@ -1054,6 +1104,20 @@ function library:tab(properties)
         }
         library:close_element()
     end
+
+    items[ "button" ].MouseEnter:Connect(function()
+        if not self.selected_tab or self.selected_tab[1] ~= items["button"] then
+            library:tween(items["button"], {BackgroundTransparency = 0.78}, Enum.EasingStyle.Quad, 0.15)
+            library:tween(items["name"], {TextColor3 = rgb(180, 180, 186)}, Enum.EasingStyle.Quad, 0.15)
+        end
+    end)
+
+    items[ "button" ].MouseLeave:Connect(function()
+        if not self.selected_tab or self.selected_tab[1] ~= items["button"] then
+            library:tween(items["button"], {BackgroundTransparency = 0.9}, Enum.EasingStyle.Quad, 0.15)
+            library:tween(items["name"], {TextColor3 = rgb(108, 108, 114)}, Enum.EasingStyle.Quad, 0.15)
+        end
+    end)
 
     items[ "button" ].MouseButton1Down:Connect(function() cfg.open_tab() end)
     if not self.selected_tab then cfg.open_tab(true) end
