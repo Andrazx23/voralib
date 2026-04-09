@@ -590,7 +590,7 @@ function library:window(properties)
         game_name = properties.gameInfo or properties.game_info or properties.GameInfo or "Milenium for Counter-Strike: Global Offensive";
         logo = properties.logo or properties.Logo or "116918679098324";
         toggle_button_image = properties.toggleButtonImage or properties.toggle_ui_image or properties.ToggleUiImage or "113154475025105";
-        size = properties.size or properties.Size or dim2(0, 700, 0, 565);
+        size = properties.size or properties.Size or dim2(0, 650, 0, 435);
         selected_tab = nil;
         items = {};
     }
@@ -627,25 +627,26 @@ function library:window(properties)
 
         local toggle_rbx = window_resolve_rbx_image(cfg.toggle_button_image, 113154475025105)
             or "rbxassetid://113154475025105"
+        local float_toggle_px = 52
         items[ "open_close_button" ] = library:create( "TextButton" , {
             Parent = library[ "items" ];
             Name = "\0";
             Text = "";
             AutoButtonColor = false;
             AnchorPoint = vec2(0, 0.5);
-            Position = dim2(0, 16, 0.5, 0);
-            Size = dim2(0, 36, 0, 36);
+            Position = dim2(0, 18, 0.5, 0);
+            Size = dim2(0, float_toggle_px, 0, float_toggle_px);
             BorderSizePixel = 0;
-            BackgroundTransparency = 1;
-            BackgroundColor3 = rgb(14, 14, 16);
+            BackgroundTransparency = 0.18;
+            BackgroundColor3 = rgb(22, 22, 26);
         })
-        library:create( "UICorner" , { Parent = items[ "open_close_button" ]; CornerRadius = dim(0, 8) })
-        library:create( "UIStroke" , { Parent = items[ "open_close_button" ]; Color = rgb(23, 23, 29); Transparency = 0.4 });
+        library:create( "UICorner" , { Parent = items[ "open_close_button" ]; CornerRadius = dim(0.5, 0) })
+        library:create( "UIStroke" , { Parent = items[ "open_close_button" ]; Color = rgb(40, 40, 48); Transparency = 0.35 });
         items[ "open_close_button_icon" ] = library:create("ImageLabel", {
             Parent = items[ "open_close_button" ];
             Name = "\0";
             BackgroundTransparency = 1;
-            Size = dim2(1, -4, 1, -4);
+            Size = dim2(1, -12, 1, -12);
             Position = dim2(0.5, 0, 0.5, 0);
             AnchorPoint = vec2(0.5, 0.5);
             Image = toggle_rbx;
@@ -699,6 +700,9 @@ function library:window(properties)
             BackgroundColor3 = rgb(255, 255, 255);
         })
 
+        local sidebar_pad_l, sidebar_pad_r, sidebar_logo_gap = 12, 10, 10
+        local sidebar_logo_sz = 38
+        local sidebar_title_left = sidebar_pad_l + sidebar_logo_sz + sidebar_logo_gap
         local header_rbx = window_resolve_rbx_image(cfg.logo, 116918679098324)
         local header_img = header_rbx or (library:resolve_icon(cfg.logo) or "")
         local header_is_rbx = header_rbx ~= nil
@@ -706,8 +710,8 @@ function library:window(properties)
             Parent = items[ "title_row" ];
             Name = "\0";
             BackgroundTransparency = 1;
-            Size = dim2(0, 44, 0, 44);
-            Position = dim2(0, 10, 0.5, 0);
+            Size = dim2(0, sidebar_logo_sz, 0, sidebar_logo_sz);
+            Position = dim2(0, sidebar_pad_l, 0.5, 0);
             AnchorPoint = vec2(0, 0.5);
             BorderSizePixel = 0;
             Image = header_img;
@@ -725,17 +729,18 @@ function library:window(properties)
             Name = "\0";
             Text = string.format("%s %s", cfg.name, cfg.suffix);
             BackgroundTransparency = 1;
-            Position = dim2(0, 60, 0.5, 0);
+            Position = dim2(0, sidebar_title_left, 0.5, 0);
             AnchorPoint = vec2(0, 0.5);
-            Size = dim2(1, -70, 0, 0);
+            Size = dim2(1, -(sidebar_title_left + sidebar_pad_r), 0, 0);
             TextColor3 = rgb(255, 255, 255);
             BorderSizePixel = 0;
             RichText = false;
             TextSize = 26;
             TextXAlignment = Enum.TextXAlignment.Left;
+            TextYAlignment = Enum.TextYAlignment.Center;
             TextWrapped = true;
             AutomaticSize = Enum.AutomaticSize.Y;
-            BackgroundColor3 = rgb(255, 255, 255)
+            BackgroundColor3 = rgb(255, 255, 255);
         })
 
         local title_gradient = library:create("UIGradient", {
