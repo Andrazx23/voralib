@@ -1,4 +1,118 @@
 --[[
+    newlib.lua (100% Obsidian mode)
+    This file is a thin loader that returns Obsidian Library directly.
+]]
+
+local getgenv_fn = getgenv or function()
+    return shared
+end
+
+local function file_exists(path)
+    if not isfile then
+        return false
+    end
+    local ok, out = pcall(isfile, path)
+    return ok and out == true
+end
+
+local function try_load_chunk_from_file(paths)
+    if type(paths) ~= "table" or not readfile or not loadstring then
+        return nil
+    end
+
+    for _, path in ipairs(paths) do
+        if file_exists(path) then
+            local ok_read, source = pcall(readfile, path)
+            if ok_read and type(source) == "string" and source ~= "" then
+                local ok_load, fn = pcall(loadstring, source, "@" .. path)
+                if ok_load and type(fn) == "function" then
+                    return fn
+                end
+            end
+        end
+    end
+
+    return nil
+end
+
+local function try_load_chunk_from_url(urls)
+    if type(urls) ~= "table" or not game or type(game.HttpGet) ~= "function" or not loadstring then
+        return nil
+    end
+
+    for _, url in ipairs(urls) do
+        local ok_fetch, source = pcall(function()
+            return game:HttpGet(url)
+        end)
+        if ok_fetch and type(source) == "string" and source ~= "" then
+            local ok_load, fn = pcall(loadstring, source, "@" .. url)
+            if ok_load and type(fn) == "function" then
+                return fn
+            end
+        end
+    end
+
+    return nil
+end
+
+local library_chunk = try_load_chunk_from_file({
+    "source for vorahub/obsidian/Library.lua",
+    "obsidian/Library.lua",
+    "Library.lua",
+})
+
+if not library_chunk then
+    library_chunk = try_load_chunk_from_url({
+        "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/Library.lua",
+    })
+end
+
+assert(type(library_chunk) == "function", "newlib: failed to load Obsidian Library.lua")
+
+local Library = library_chunk()
+assert(type(Library) == "table", "newlib: Obsidian Library.lua must return a table")
+
+local function load_addon(addon_name)
+    local addon_chunk = try_load_chunk_from_file({
+        "source for vorahub/obsidian/addons/" .. addon_name .. ".lua",
+        "obsidian/addons/" .. addon_name .. ".lua",
+        "addons/" .. addon_name .. ".lua",
+    })
+
+    if not addon_chunk then
+        addon_chunk = try_load_chunk_from_url({
+            "https://raw.githubusercontent.com/deividcomsono/Obsidian/refs/heads/main/addons/" .. addon_name .. ".lua",
+        })
+    end
+
+    if type(addon_chunk) ~= "function" then
+        return nil
+    end
+
+    local ok_exec, addon = pcall(addon_chunk)
+    if not ok_exec then
+        return nil
+    end
+
+    if type(addon) == "table" and type(addon.SetLibrary) == "function" then
+        pcall(function()
+            addon:SetLibrary(Library)
+        end)
+    end
+
+    return addon
+end
+
+Library.Addons = Library.Addons or {}
+Library.Addons.ThemeManager = Library.Addons.ThemeManager or load_addon("ThemeManager")
+Library.Addons.SaveManager = Library.Addons.SaveManager or load_addon("SaveManager")
+
+local env = getgenv_fn()
+env.library = Library
+env.Library = Library
+
+return Library
+--[[
     VoraHub NewLib (Rewrite)
     - UI base from local library implementation (oldlib.lua)
     - Optional function bridge from Obsidian Library
