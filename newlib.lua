@@ -209,14 +209,15 @@ function library:tween(obj, properties, easing_style, time)
     return tween
 end
 
---- Bottom-right resize. Pass `options.parent` (e.g. ScreenGui) to show a grip **outside** the window corner.
+--- Bottom-right resize. Grip parented to `frame`: `inside_corner` = sedikit ke **dalam** pojok (aman dari clip UICorner).
 function library:resizify(frame, options)
     options = options or {}
     local min_w = options.min_width or frame.Size.X.Offset
     local min_h = options.min_height or frame.Size.Y.Offset
-    local grip_parent = options.parent
     local grip_size = options.grip_size or 24
-    local outside_pad = options.outside_pad or 4
+    local inside_corner = options.inside_corner or options.InsideCorner
+    local outside_pad = options.outside_pad or 3
+    local show_grip = options.show_grip ~= false
 
     local resizing = false
     local start_mouse
@@ -234,14 +235,16 @@ function library:resizify(frame, options)
         frame.Size = dim2(start_size.X.Scale, sw, start_size.Y.Scale, sh)
     end
 
-    if grip_parent then
+    if show_grip then
+        local inset = inside_corner and -math.max(4, math.floor(grip_size * 0.22)) or outside_pad
         local grip = library:create("TextButton", {
-            Parent = grip_parent;
+            Parent = frame;
             Name = "resize_grip";
             AutoButtonColor = false;
             Text = "";
             Size = dim2(0, grip_size, 0, grip_size);
             AnchorPoint = vec2(1, 1);
+            Position = dim2(1, inset, 1, inset);
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
             ZIndex = 100;
@@ -277,20 +280,10 @@ function library:resizify(frame, options)
             BorderSizePixel = 0;
         })
 
-        local function sync_grip()
-            if not frame.Parent or not grip.Parent then
-                return
-            end
-            local ap = frame.AbsolutePosition
-            local as = frame.AbsoluteSize
-            grip.Position = dim2(0, ap.X + as.X + outside_pad, 0, ap.Y + as.Y + outside_pad)
+        frame:GetPropertyChangedSignal("Visible"):Connect(function()
             grip.Visible = frame.Visible
-        end
-
-        sync_grip()
-        frame:GetPropertyChangedSignal("Visible"):Connect(sync_grip)
-        frame:GetPropertyChangedSignal("Size"):Connect(sync_grip)
-        frame:GetPropertyChangedSignal("Position"):Connect(sync_grip)
+        end)
+        grip.Visible = frame.Visible
 
         grip.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -311,10 +304,7 @@ function library:resizify(frame, options)
                 return
             end
             apply_size_from_delta(input.Position)
-            sync_grip()
         end)
-
-        task.defer(sync_grip)
 
         return grip
     end
@@ -715,9 +705,9 @@ function library:window(properties)
             title_gradient.Offset = vec2(math.sin(t * 0.28) * 1.4, 0)
         end)
         
-        -- Satu bar atas: sub-tab (kiri) + search (kanan) — tanpa strip/header terpisah
-        local top_bar_h = 50
-        local content_bottom_pad = 12
+        -- Bar atas: judul + subtitle (ala NEMESIS) + sub-tab horizontal + search kanan
+        local top_bar_h = 72
+        local content_bottom_pad = 10
         local content_height_inset = 25 + top_bar_h + content_bottom_pad
         items[ "multi_holder" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
@@ -732,13 +722,59 @@ function library:window(properties)
             ZIndex = 3;
         }); cfg.multi_holder = items[ "multi_holder" ];
 
-        items[ "tabs_strip_host" ] = library:create("Frame", {
+        items[ "page_header_left" ] = library:create("Frame", {
             Parent = items[ "multi_holder" ];
             Name = "\0";
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
-            Position = dim2(0, 12, 0, 0);
-            Size = dim2(1, -326, 1, 0);
+            Position = dim2(0, 12, 0, 6);
+            Size = dim2(1, -326, 1, -12);
+            BackgroundColor3 = rgb(255, 255, 255);
+        })
+        library:create("UIListLayout", {
+            Parent = items[ "page_header_left" ];
+            FillDirection = Enum.FillDirection.Vertical;
+            SortOrder = Enum.SortOrder.LayoutOrder;
+            Padding = dim(0, 2);
+            HorizontalAlignment = Enum.HorizontalAlignment.Left;
+            VerticalAlignment = Enum.VerticalAlignment.Top;
+        })
+
+        items[ "main_page_title" ] = library:create("TextLabel", {
+            Parent = items[ "page_header_left" ];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            FontFace = fonts.font;
+            Text = "";
+            TextColor3 = themes.preset.accent;
+            TextSize = 20;
+            TextXAlignment = Enum.TextXAlignment.Left;
+            AutomaticSize = Enum.AutomaticSize.XY;
+            Size = dim2(0, 0, 0, 0);
+            BorderSizePixel = 0;
+        })
+        library:apply_theme(items[ "main_page_title" ], "accent", "TextColor3")
+
+        items[ "main_page_subtitle" ] = library:create("TextLabel", {
+            Parent = items[ "page_header_left" ];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            FontFace = fonts.small;
+            Text = "";
+            TextColor3 = rgb(120, 120, 130);
+            TextSize = 13;
+            TextXAlignment = Enum.TextXAlignment.Left;
+            AutomaticSize = Enum.AutomaticSize.XY;
+            Size = dim2(1, -4, 0, 0);
+            BorderSizePixel = 0;
+        })
+
+        items[ "tabs_strip_host" ] = library:create("Frame", {
+            Parent = items[ "page_header_left" ];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            BorderSizePixel = 0;
+            Size = dim2(1, 0, 0, 30);
             ClipsDescendants = true;
             BackgroundColor3 = rgb(255, 255, 255);
         })
@@ -894,16 +930,16 @@ function library:window(properties)
         }); library:apply_theme(items[ "other_info" ], "accent", "TextColor3");
 
         cfg.content_height_inset = content_height_inset
+        cfg.top_bar_h = top_bar_h
     end 
 
     do -- Other
         library:draggify(items[ "main" ])
         items[ "resize_grip" ] = library:resizify(items[ "main" ], {
-            parent = library[ "items" ];
             min_width = cfg.size.X.Offset;
             min_height = cfg.size.Y.Offset;
             grip_size = 26;
-            outside_pad = 5;
+            inside_corner = true;
         })
     end 
 
@@ -924,19 +960,23 @@ function library:tab(properties)
         name = properties.name or properties.Name or "visuals"; 
         icon = properties.icon or properties.Icon or "http://www.roblox.com/asset/?id=6034767608";
         tabs = properties.tabs or properties.Tabs or {"Main", "Misc.", "Settings"};
+        default_page_subtitle = properties.subtitle or properties.Subtitle or "";
+        page_subtitles = properties.pageSubtitles or properties.page_subtitles or {};
+        hide_top_tabs = properties.hideTopTabs or properties.HideTopTabs or false;
         pages = {}; 
         current_multi = nil; 
         items = {};
     } 
 
     local items = cfg.items; do 
-        local hinset = self.content_height_inset or (25 + 50 + 12)
+        local hinset = self.content_height_inset or (25 + 72 + 10)
+        local top_y = self.top_bar_h or 72
         items[ "tab_holder" ] = library:create( "Frame" , {
             Parent = library.cache;
             Name = "\0";
             Visible = false;
             BackgroundTransparency = 1;
-            Position = dim2(0, 196, 0, 50);
+            Position = dim2(0, 196, 0, top_y);
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, -216, 1, -hinset);
             BorderSizePixel = 0;
@@ -1016,7 +1056,7 @@ function library:tab(properties)
         library:create( "UIPadding" , { PaddingTop = dim(0, 6); PaddingBottom = dim(0, 6); Parent = items[ "menu_dropdown_holder" ]; PaddingRight = dim(0, 4); PaddingLeft = dim(0, 0) });
 
         for _, page_name in cfg.tabs do
-            local data = {items = {}} 
+            local data = {items = {}, page_name = page_name} 
             local multi_items = data.items; do 
                 multi_items[ "button" ] = library:create( "TextButton" , {
                     FontFace = fonts.font;
@@ -1080,7 +1120,7 @@ function library:tab(properties)
                 });
 
                 library:create( "UIListLayout" , { FillDirection = Enum.FillDirection.Vertical; HorizontalFlex = Enum.UIFlexAlignment.Fill; Parent = multi_items[ "tab" ]; Padding = dim(0, 0); SortOrder = Enum.SortOrder.LayoutOrder; VerticalFlex = Enum.UIFlexAlignment.Fill });
-                library:create( "UIPadding" , { PaddingTop = dim(0, 10); PaddingBottom = dim(0, 10); Parent = multi_items[ "tab" ]; PaddingRight = dim(0, 12); PaddingLeft = dim(0, 12) });
+                library:create( "UIPadding" , { PaddingTop = dim(0, 6); PaddingBottom = dim(0, 8); Parent = multi_items[ "tab" ]; PaddingRight = dim(0, 12); PaddingLeft = dim(0, 12) });
             end
 
             data.text = multi_items[ "name" ]
@@ -1112,6 +1152,14 @@ function library:tab(properties)
                 data.page.Visible = true
                 data.page.Parent = items["tab_holder"]
                 cfg.current_multi = data
+                if self.items[ "main_page_title" ] then
+                    self.items[ "main_page_title" ].Text = data.page_name
+                end
+                if self.items[ "main_page_subtitle" ] then
+                    local sub = cfg.page_subtitles[ data.page_name ] or cfg.default_page_subtitle or ""
+                    self.items[ "main_page_subtitle" ].Text = sub
+                    self.items[ "main_page_subtitle" ].Visible = sub ~= ""
+                end
                 library:close_element()
             end
 
@@ -1163,7 +1211,8 @@ function library:tab(properties)
         items[ "tab_holder" ].Parent = self.items[ "main" ]
 
         items[ "menu_dropdown_holder" ].Parent = self.items[ "tabs_strip_host" ]
-        items[ "menu_dropdown_holder" ].Visible = true
+        items[ "menu_dropdown_holder" ].Visible = not cfg.hide_top_tabs
+        items[ "tabs_strip_host" ].Visible = not cfg.hide_top_tabs
         items[ "menu_dropdown_holder" ].Size = dim2(1, 0, 1, 0)
         items[ "menu_dropdown_holder" ].Position = dim2(0, 0, 0, 0)
 
