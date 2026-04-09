@@ -431,9 +431,16 @@ function library:close_element(new_path)
 end 
 
 function library:create(instance, options)
-    local ins = Instance.new(instance) 
-    for prop, value in options do ins[prop] = value end
-    return ins 
+    local ins = Instance.new(instance)
+    for prop, value in options do
+        local ok = pcall(function()
+            ins[prop] = value
+        end)
+        if not ok then
+            -- Ignore unsupported properties so the UI can still render across executors/clients.
+        end
+    end
+    return ins
 end
 
 function library:unload_menu() 
