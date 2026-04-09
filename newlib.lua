@@ -1182,24 +1182,26 @@ function library:tab(properties)
     end 
 
     function cfg.open_tab() 
-        local hinset = self.content_height_inset or (25 + 50 + 12)
+        local hinset = self.content_height_inset or (25 + 72 + 10)
         local selected_tab = self.selected_tab
         if selected_tab then 
             if selected_tab[ 5 ] then
                 selected_tab[ 5 ].Visible = false
                 selected_tab[ 5 ].Parent = library[ "cache" ]
             end
-            if selected_tab[ 4 ] ~= items[ "tab_holder" ] then 
+            if selected_tab[ 4 ] and selected_tab[ 4 ] ~= items[ "tab_holder" ] then 
                 self.items[ "global_fade" ].BackgroundTransparency = 0
                 library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
                 selected_tab[ 4 ].Size = dim2(1, -216, 1, -hinset)
             end
-            library:tween(selected_tab[ 1 ], {BackgroundTransparency = 1, BackgroundColor3 = rgb(29, 29, 29)})
-            library:tween(selected_tab[ 2 ], {ImageColor3 = rgb(108, 108, 114)})
-            library:tween(selected_tab[ 3 ], {TextColor3 = rgb(108, 108, 114)})
+            if selected_tab[ 1 ] then library:tween(selected_tab[ 1 ], {BackgroundTransparency = 1, BackgroundColor3 = rgb(29, 29, 29)}) end
+            if selected_tab[ 2 ] then library:tween(selected_tab[ 2 ], {ImageColor3 = rgb(108, 108, 114)}) end
+            if selected_tab[ 3 ] then library:tween(selected_tab[ 3 ], {TextColor3 = rgb(108, 108, 114)}) end
 
-            selected_tab[ 4 ].Visible = false
-            selected_tab[ 4 ].Parent = library[ "cache" ]
+            if selected_tab[ 4 ] then
+                selected_tab[ 4 ].Visible = false
+                selected_tab[ 4 ].Parent = library[ "cache" ]
+            end
         end
 
         library:tween(items[ "button" ], {BackgroundTransparency = 0, BackgroundColor3 = themes.preset.accent})
@@ -1210,11 +1212,19 @@ function library:tab(properties)
         items[ "tab_holder" ].Visible = true 
         items[ "tab_holder" ].Parent = self.items[ "main" ]
 
-        items[ "menu_dropdown_holder" ].Parent = self.items[ "tabs_strip_host" ]
-        items[ "menu_dropdown_holder" ].Visible = not cfg.hide_top_tabs
-        items[ "tabs_strip_host" ].Visible = not cfg.hide_top_tabs
-        items[ "menu_dropdown_holder" ].Size = dim2(1, 0, 1, 0)
-        items[ "menu_dropdown_holder" ].Position = dim2(0, 0, 0, 0)
+        local strip_host = self.items[ "tabs_strip_host" ]
+        if strip_host then
+            items[ "menu_dropdown_holder" ].Parent = strip_host
+            items[ "menu_dropdown_holder" ].Size = dim2(1, 0, 1, 0)
+            items[ "menu_dropdown_holder" ].Position = dim2(0, 0, 0, 0)
+            items[ "menu_dropdown_holder" ].Visible = not cfg.hide_top_tabs
+            strip_host.Visible = not cfg.hide_top_tabs
+        else
+            items[ "menu_dropdown_holder" ].Parent = self.items[ "multi_holder" ]
+            items[ "menu_dropdown_holder" ].Size = dim2(1, 0, 1, 0)
+            items[ "menu_dropdown_holder" ].Position = dim2(0, 0, 0, 0)
+            items[ "menu_dropdown_holder" ].Visible = not cfg.hide_top_tabs
+        end
 
         self.selected_tab = {
             items[ "button" ];
