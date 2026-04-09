@@ -6370,6 +6370,12 @@ function Library:CreateWindow(WindowInfo)
     local InitialLeftWidth = math.ceil(WindowInfo.Size.X.Offset * 0.3)
     local IsCompact = WindowInfo.SidebarCompacted
     local LastExpandedWidth = InitialLeftWidth
+    local TopBarHeight = 56
+    local BottomBarHeight = 20
+    local SidebarTopOffset = TopBarHeight + 8
+    local SidebarBottomOffset = TopBarHeight + BottomBarHeight + 8
+    local ContentTopOffset = TopBarHeight + 1
+    local ContentBottomOffset = TopBarHeight + BottomBarHeight + 1
 
     do
         Library.KeybindFrame, Library.KeybindContainer = Library:AddDraggableMenu("Keybinds")
@@ -6403,14 +6409,14 @@ function Library:CreateWindow(WindowInfo)
         )
         Library:AddOutline(MainFrame)
         Library:MakeLine(MainFrame, {
-            Position = UDim2.fromOffset(0, 54),
+            Position = UDim2.fromOffset(0, TopBarHeight),
             Size = UDim2.new(1, 0, 0, 1),
         })
 
         DividerLine = New("Frame", {
             BackgroundColor3 = "OutlineColor",
-            Position = UDim2.fromOffset(InitialLeftWidth, 0),
-            Size = UDim2.new(0, 1, 1, -21),
+            Position = UDim2.fromOffset(InitialLeftWidth, TopBarHeight),
+            Size = UDim2.new(0, 1, 1, -(TopBarHeight + BottomBarHeight)),
             Parent = MainFrame,
         })
 
@@ -6442,7 +6448,7 @@ function Library:CreateWindow(WindowInfo)
         --// Top Bar \\-
         local TopBar = New("Frame", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 54),
+            Size = UDim2.new(1, 0, 0, TopBarHeight),
             Parent = MainFrame,
         })
         Library:MakeDraggable(MainFrame, TopBar, false, true)
@@ -6557,7 +6563,7 @@ function Library:CreateWindow(WindowInfo)
             AnchorPoint = Vector2.new(1, 0.5),
             BackgroundTransparency = 1,
             Position = UDim2.new(1, -49, 0.5, 0),
-            Size = UDim2.new(1, -InitialLeftWidth - 57 - 1, 1, -16),
+            Size = UDim2.new(1, -InitialLeftWidth - 57 - 1, 1, -14),
             Parent = TopBar,
         })
 
@@ -6758,9 +6764,9 @@ function Library:CreateWindow(WindowInfo)
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
             BackgroundColor3 = "BackgroundColor",
             CanvasSize = UDim2.fromScale(0, 0),
-            Position = UDim2.fromOffset(0, 67),
+            Position = UDim2.fromOffset(0, SidebarTopOffset),
             ScrollBarThickness = 0,
-            Size = UDim2.new(0, InitialLeftWidth, 1, -88),
+            Size = UDim2.new(0, InitialLeftWidth, 1, -SidebarBottomOffset),
             Parent = MainFrame,
         })
         New("UIListLayout", {
@@ -6782,15 +6788,15 @@ function Library:CreateWindow(WindowInfo)
                 return Library:GetBetterColor(Library.Scheme.BackgroundColor, 1)
             end,
             Name = "Container",
-            Position = UDim2.new(1, 0, 0, 55),
-            Size = UDim2.new(1, -InitialLeftWidth - 1, 1, -70),
+            Position = UDim2.new(1, 0, 0, ContentTopOffset),
+            Size = UDim2.new(1, -InitialLeftWidth - 1, 1, -ContentBottomOffset),
             Parent = MainFrame,
         })
         New("UIPadding", {
             PaddingBottom = UDim.new(0, 0),
-            PaddingLeft = UDim.new(0, 6),
-            PaddingRight = UDim.new(0, 6),
-            PaddingTop = UDim.new(0, 6),
+            PaddingLeft = UDim.new(0, 8),
+            PaddingRight = UDim.new(0, 8),
+            PaddingTop = UDim.new(0, 8),
             Parent = Container,
         })
     end
@@ -6890,12 +6896,12 @@ function Library:CreateWindow(WindowInfo)
     function Window:SetSidebarWidth(Width)
         Width = math.clamp(Width, 48, MainFrame.Size.X.Offset - WindowInfo.MinContainerWidth - 1)
 
-        DividerLine.Position = UDim2.fromOffset(Width, 0)
+        DividerLine.Position = UDim2.fromOffset(Width, TopBarHeight)
 
         TitleHolder.Size = UDim2.new(0, Width, 1, 0)
-        RightWrapper.Size = UDim2.new(1, -Width - 57 - 1, 1, -16)
-        Tabs.Size = UDim2.new(0, Width, 1, -88)
-        Container.Size = UDim2.new(1, -Width - 1, 1, -70)
+        RightWrapper.Size = UDim2.new(1, -Width - 57 - 1, 1, -14)
+        Tabs.Size = UDim2.new(0, Width, 1, -SidebarBottomOffset)
+        Container.Size = UDim2.new(1, -Width - 1, 1, -ContentBottomOffset)
 
         if WindowInfo.EnableCompacting then
             ApplyCompact()
@@ -7029,18 +7035,18 @@ function Library:CreateWindow(WindowInfo)
                 CanvasSize = UDim2.fromScale(0, 0),
                 ScrollBarImageTransparency = 1,
                 ScrollBarThickness = 0,
-                Size = UDim2.new(0.5, -3, 1, 0),
+                Size = UDim2.new(0.5, -4, 1, 0),
                 Parent = TabContainer,
             })
             New("UIListLayout", {
-                Padding = UDim.new(0, 2),
+                Padding = UDim.new(0, 6),
                 Parent = TabLeft,
             })
             New("UIPadding", {
-                PaddingBottom = UDim.new(0, 2),
-                PaddingLeft = UDim.new(0, 2),
-                PaddingRight = UDim.new(0, 2),
-                PaddingTop = UDim.new(0, 2),
+                PaddingBottom = UDim.new(0, 4),
+                PaddingLeft = UDim.new(0, 4),
+                PaddingRight = UDim.new(0, 4),
+                PaddingTop = UDim.new(0, 4),
                 Parent = TabLeft,
             })
             do
@@ -7064,18 +7070,18 @@ function Library:CreateWindow(WindowInfo)
                 Position = UDim2.fromScale(1, 0),
                 ScrollBarImageTransparency = 1,
                 ScrollBarThickness = 0,
-                Size = UDim2.new(0.5, -3, 1, 0),
+                Size = UDim2.new(0.5, -4, 1, 0),
                 Parent = TabContainer,
             })
             New("UIListLayout", {
-                Padding = UDim.new(0, 2),
+                Padding = UDim.new(0, 6),
                 Parent = TabRight,
             })
             New("UIPadding", {
-                PaddingBottom = UDim.new(0, 2),
-                PaddingLeft = UDim.new(0, 2),
-                PaddingRight = UDim.new(0, 2),
-                PaddingTop = UDim.new(0, 2),
+                PaddingBottom = UDim.new(0, 4),
+                PaddingLeft = UDim.new(0, 4),
+                PaddingRight = UDim.new(0, 4),
+                PaddingTop = UDim.new(0, 4),
                 Parent = TabRight,
             })
             do
