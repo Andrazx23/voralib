@@ -381,22 +381,11 @@ function library:draggify(frame)
 
     library:connection(uis.InputChanged, function(input, game_event) 
         if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-            local viewport_x = camera.ViewportSize.X
-            local viewport_y = camera.ViewportSize.Y
-
             local current_position = dim2(
-                0,
-                clamp(
-                    start_size.X.Offset + (input.Position.X - start.X),
-                    0,
-                    viewport_x - frame.Size.X.Offset
-                ),
-                0,
-                math.clamp(
-                    start_size.Y.Offset + (input.Position.Y - start.Y),
-                    0,
-                    viewport_y - frame.Size.Y.Offset
-                )
+                start_size.X.Scale,
+                start_size.X.Offset + (input.Position.X - start.X),
+                start_size.Y.Scale,
+                start_size.Y.Offset + (input.Position.Y - start.Y)
             )
 
             library:tween(frame, {Position = current_position}, Enum.EasingStyle.Linear, 0.05)
@@ -588,8 +577,9 @@ function library:window(properties)
     local is_touch_ui = uis.TouchEnabled and not uis.MouseEnabled
     local default_w = is_touch_ui and floor(vw * 0.92 - 16) or floor(vw * 0.58)
     local default_h = is_touch_ui and floor(vh * 0.62 - gui_offset * 0.5) or floor(vh * 0.56)
-    default_w = clamp(default_w, 300, vw - 8)
-    default_h = clamp(default_h, 280, vh - 8)
+    -- Desktop cap supaya tidak terlalu panjang di monitor lebar.
+    default_w = clamp(default_w, 300, is_touch_ui and (vw - 8) or 760)
+    default_h = clamp(default_h, 280, is_touch_ui and (vh - 8) or 460)
     local sidebar_w = is_touch_ui and 148 or 196
     local content_margin = sidebar_w + 20
     local search_w_ui = is_touch_ui and 200 or 320
@@ -640,33 +630,26 @@ function library:window(properties)
 
         local toggle_rbx = window_resolve_rbx_image(cfg.toggle_button_image, 113154475025105)
             or "rbxassetid://113154475025105"
-        local float_toggle_px = 52
-        items[ "open_close_button" ] = library:create( "TextButton" , {
+        local float_toggle_px = 50
+        items[ "open_close_button" ] = library:create( "ImageButton" , {
             Parent = library[ "items" ];
             Name = "\0";
-            Text = "";
             AutoButtonColor = false;
+            Active = true;
+            Draggable = true;
             AnchorPoint = vec2(0, 0.5);
-            Position = dim2(0, 18, 0.5, 0);
+            Position = dim2(0.1, 0, 0.5, 0);
             Size = dim2(0, float_toggle_px, 0, float_toggle_px);
             BorderSizePixel = 0;
-            BackgroundTransparency = 0.18;
-            BackgroundColor3 = rgb(22, 22, 26);
-        })
-        library:create( "UICorner" , { Parent = items[ "open_close_button" ]; CornerRadius = dim(0.5, 0) })
-        library:create( "UIStroke" , { Parent = items[ "open_close_button" ]; Color = rgb(40, 40, 48); Transparency = 0.35 });
-        items[ "open_close_button_icon" ] = library:create("ImageLabel", {
-            Parent = items[ "open_close_button" ];
-            Name = "\0";
-            BackgroundTransparency = 1;
-            Size = dim2(1, -12, 1, -12);
-            Position = dim2(0.5, 0, 0.5, 0);
-            AnchorPoint = vec2(0.5, 0.5);
+            BackgroundTransparency = 0;
+            BackgroundColor3 = rgb(14, 14, 16);
             Image = toggle_rbx;
-            ScaleType = Enum.ScaleType.Fit;
             ImageColor3 = rgb(255, 255, 255);
-            BorderSizePixel = 0;
+            ScaleType = Enum.ScaleType.Fit;
+            ZIndex = 100;
         })
+        library:create( "UICorner" , { Parent = items[ "open_close_button" ]; CornerRadius = dim(0, 10) })
+        library:create( "UIStroke" , { Parent = items[ "open_close_button" ]; Color = rgb(23, 23, 29); Transparency = 0.2 });
         
         items[ "side_frame" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
@@ -1084,10 +1067,7 @@ function library:window(properties)
 
     items["open_close_button"].MouseButton1Click:Connect(function()
         items["main"].Visible = not items["main"].Visible
-        local ico = items["open_close_button_icon"]
-        if ico then
-            ico.ImageTransparency = items["main"].Visible and 0 or 0.35
-        end
+        items["open_close_button"].ImageTransparency = items["main"].Visible and 0 or 0.2
     end)
 
     function cfg.toggle_menu(bool) 
