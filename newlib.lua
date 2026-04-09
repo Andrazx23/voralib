@@ -1,3 +1,8 @@
+--[[
+    Milenium Library FIXED
+    -> Config System Fixed (Save/Load/Auto-Folder)
+    -> No more parse errors or missing functions
+]]
 
 -- Variables 
 local uis = game:GetService("UserInputService") 
@@ -591,15 +596,22 @@ function library:window(properties)
         local title_gradient = library:create("UIGradient", {
             Parent = items["title"];
             Color = rgbseq{
-                rgbkey(0, rgb(18, 42, 88)),
-                rgbkey(0.18, rgb(210, 245, 255)),
-                rgbkey(0.34, rgb(28, 62, 118)),
-                rgbkey(0.5, rgb(220, 248, 255)),
-                rgbkey(0.66, rgb(22, 52, 102)),
-                rgbkey(0.82, rgb(200, 238, 255)),
-                rgbkey(1, rgb(18, 42, 88))
+                rgbkey(0, rgb(200, 235, 255)),
+                rgbkey(0.06, rgb(22, 48, 96)),
+                rgbkey(0.12, rgb(205, 238, 255)),
+                rgbkey(0.2, rgb(18, 42, 88)),
+                rgbkey(0.28, rgb(210, 242, 255)),
+                rgbkey(0.36, rgb(20, 46, 92)),
+                rgbkey(0.44, rgb(198, 232, 255)),
+                rgbkey(0.52, rgb(24, 50, 98)),
+                rgbkey(0.6, rgb(205, 238, 255)),
+                rgbkey(0.68, rgb(18, 44, 90)),
+                rgbkey(0.76, rgb(200, 235, 255)),
+                rgbkey(0.84, rgb(22, 48, 96)),
+                rgbkey(0.92, rgb(208, 240, 255)),
+                rgbkey(1, rgb(200, 235, 255))
             };
-            Rotation = 18;
+            Rotation = 12;
             Offset = vec2(0, 0);
         })
 
@@ -608,7 +620,7 @@ function library:window(properties)
                 return
             end
             local t = tick()
-            title_gradient.Offset = vec2(math.sin(t * 1.05) * 1.45, math.sin(t * 0.55) * 0.06)
+            title_gradient.Offset = vec2(math.sin(t * 0.95) * 1.55, 0)
         end)
         
         items[ "multi_holder" ] = library:create( "Frame" , {
@@ -729,10 +741,8 @@ function library:window(properties)
         library:resizify(items[ "main" ])
     end 
 
-    items[ "open_close_button" ].MouseButton1Click:Connect(function()
-        items[ "main" ].Visible = not items[ "main" ].Visible
-        items[ "open_close_button" ].Text = items[ "main" ].Visible and "UI" or "+"
-    end)
+    local is_minimized = false
+    local apply_minimize
 
     do
         local control_holder = library:create("Frame", {
@@ -788,11 +798,10 @@ function library:window(properties)
 
         local last_size = items["main"].Size
         local last_pos = items["main"].Position
-        local is_minimized = false
         local is_maximized = false
         local min_size = dim2(0, 260, 0, 70)
 
-        local function apply_minimize(state)
+        apply_minimize = function(state)
             if state then
                 if not is_maximized then
                     last_size = items["main"].Size
@@ -805,6 +814,7 @@ function library:window(properties)
                 task.delay(0.27, function()
                     if is_minimized and items["main"] then
                         items["main"].Visible = false
+                        items["open_close_button"].Text = "+"
                     end
                 end)
                 if maximize_icon then
@@ -816,6 +826,7 @@ function library:window(properties)
                 items["main"].Visible = true
                 items["main"].Position = hide_pos
                 library:tween(items["main"], {Size = last_size, Position = last_pos}, Enum.EasingStyle.Quad, 0.25)
+                items["open_close_button"].Text = "UI"
             end
         end
 
@@ -858,6 +869,15 @@ function library:window(properties)
             library:unload_menu()
         end)
     end
+
+    items["open_close_button"].MouseButton1Click:Connect(function()
+        if is_minimized and apply_minimize then
+            apply_minimize(false)
+            return
+        end
+        items["main"].Visible = not items["main"].Visible
+        items["open_close_button"].Text = items["main"].Visible and "UI" or "+"
+    end)
 
     function cfg.toggle_menu(bool) 
         library[ "items" ].Enabled = bool
