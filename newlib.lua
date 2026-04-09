@@ -1109,9 +1109,14 @@ end
 function library:tab(properties)
     local win_sw = self.sidebar_w or 196
     local win_cm = self.content_margin or (win_sw + 20)
+    local requested_icon = properties.icon or properties.Icon
+    local normalized_icon = nil
+    if type(requested_icon) == "string" and requested_icon ~= "" then
+        normalized_icon = normalize_icon_value(requested_icon, "lucide:layout-dashboard")
+    end
     local cfg = {
         name = properties.name or properties.Name or "visuals"; 
-        icon = normalize_icon_value(properties.icon or properties.Icon, "lucide:layout-dashboard");
+        icon = normalized_icon;
         tabs = properties.tabs or properties.Tabs or {"Main", "Misc.", "Settings"};
         default_page_subtitle = properties.subtitle or properties.Subtitle or "";
         page_subtitles = properties.pageSubtitles or properties.page_subtitles or {};
@@ -1155,12 +1160,13 @@ function library:tab(properties)
             BackgroundColor3 = rgb(29, 29, 29)
         });
         
+        local resolved_sidebar_icon = cfg.icon and library:resolve_icon(cfg.icon) or ""
         items[ "icon" ] = library:create( "ImageLabel" , {
             ImageColor3 = rgb(72, 72, 73);
             BorderColor3 = rgb(0, 0, 0);
             Parent = items[ "button" ];
             AnchorPoint = vec2(0, 0.5);
-            Image = library:resolve_icon(cfg.icon) or normalize_icon_value(cfg.icon, "rbxassetid://6034767608");
+            Image = resolved_sidebar_icon;
             BackgroundTransparency = 1;
             Position = dim2(0, 10, 0.5, 0);
             Name = "\0";
@@ -1168,6 +1174,7 @@ function library:tab(properties)
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255)
         }); library:apply_theme(items[ "icon" ], "accent", "ImageColor3");
+        items["icon"].Visible = resolved_sidebar_icon ~= nil and resolved_sidebar_icon ~= ""
         
         items[ "name" ] = library:create( "TextLabel" , {
             FontFace = fonts.font;
@@ -1177,7 +1184,7 @@ function library:tab(properties)
             Parent = items[ "button" ];
             Name = "\0";
             Size = dim2(0, 0, 1, 0);
-            Position = dim2(0, 40, 0, 0);
+            Position = dim2(0, items["icon"].Visible and 40 or 10, 0, 0);
             BackgroundTransparency = 1;
             TextXAlignment = Enum.TextXAlignment.Left;
             BorderSizePixel = 0;
