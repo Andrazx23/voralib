@@ -214,7 +214,7 @@ local Library = {
     OriginalMinSize = Vector2.new(480, 360),
     MinSize = Vector2.new(480, 360),
     DPIScale = 1,
-    CornerRadius = 4,
+    CornerRadius = 8,
     CornerRadiusDropdown = false, -- Temporary
 
     IsLightTheme = false,
@@ -225,6 +225,14 @@ local Library = {
         OutlineColor = Color3.fromRGB(28, 28, 28),
         FontColor = Color3.new(1, 1, 1),
         Font = Font.fromEnum(Enum.Font.Gotham),
+        
+        TopBarGradientEnabled = true,
+        TopBarGradientDarkColor = Color3.fromRGB(8, 14, 38),
+        TopBarGradientLightColor = Color3.fromRGB(42, 124, 255),
+        TopBarGradientRotation = 25,
+        TopBarGradientSpeed = 6,
+        TopBarGradientDarkTransparency = 0.84,
+        TopBarGradientLightTransparency = 0.68,
 
         RedColor = Color3.fromRGB(255, 50, 50),
         DestructiveColor = Color3.fromRGB(220, 38, 38),
@@ -312,7 +320,7 @@ local Templates = {
         Resizable = true,
         SearchbarSize = UDim2.fromScale(1, 1),
         GlobalSearch = false,
-        CornerRadius = 4,
+        CornerRadius = 8,
         NotifySide = "Right",
         ShowCustomCursor = true,
         Font = Enum.Font.Gotham,
@@ -6434,7 +6442,7 @@ function Library:CreateWindow(WindowInfo)
         --// Top Bar \\-
         local TopBar = New("Frame", {
             BackgroundTransparency = 1,
-            Size = UDim2.new(1, 0, 0, 48),
+            Size = UDim2.new(1, 0, 0, 54),
             Parent = MainFrame,
         })
         Library:MakeDraggable(MainFrame, TopBar, false, true)
@@ -6453,24 +6461,38 @@ function Library:CreateWindow(WindowInfo)
         })
         local TopBarGradientEffect = New("UIGradient", {
             Color = ColorSequence.new({
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(13, 25, 72)),
-                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(49, 94, 255)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(13, 25, 72)),
+                ColorSequenceKeypoint.new(0, Library.Scheme.TopBarGradientDarkColor),
+                ColorSequenceKeypoint.new(0.5, Library.Scheme.TopBarGradientLightColor),
+                ColorSequenceKeypoint.new(1, Library.Scheme.TopBarGradientDarkColor),
             }),
             Offset = Vector2.new(-1, 0),
-            Rotation = 25,
+            Rotation = Library.Scheme.TopBarGradientRotation,
             Transparency = NumberSequence.new({
-                NumberSequenceKeypoint.new(0, 0.78),
-                NumberSequenceKeypoint.new(0.5, 0.6),
-                NumberSequenceKeypoint.new(1, 0.78),
+                NumberSequenceKeypoint.new(0, Library.Scheme.TopBarGradientDarkTransparency),
+                NumberSequenceKeypoint.new(0.5, Library.Scheme.TopBarGradientLightTransparency),
+                NumberSequenceKeypoint.new(1, Library.Scheme.TopBarGradientDarkTransparency),
             }),
             Parent = TopBarGradientFill,
         })
         task.spawn(function()
             while TopBarGradient and TopBarGradient.Parent do
+                TopBarGradient.Visible = Library.Scheme.TopBarGradientEnabled == true
+                TopBarGradientEffect.Color = ColorSequence.new({
+                    ColorSequenceKeypoint.new(0, Library.Scheme.TopBarGradientDarkColor),
+                    ColorSequenceKeypoint.new(0.5, Library.Scheme.TopBarGradientLightColor),
+                    ColorSequenceKeypoint.new(1, Library.Scheme.TopBarGradientDarkColor),
+                })
+                TopBarGradientEffect.Transparency = NumberSequence.new({
+                    NumberSequenceKeypoint.new(0, math.clamp(Library.Scheme.TopBarGradientDarkTransparency, 0, 1)),
+                    NumberSequenceKeypoint.new(0.5, math.clamp(Library.Scheme.TopBarGradientLightTransparency, 0, 1)),
+                    NumberSequenceKeypoint.new(1, math.clamp(Library.Scheme.TopBarGradientDarkTransparency, 0, 1)),
+                })
+                TopBarGradientEffect.Rotation = Library.Scheme.TopBarGradientRotation
+
+                local GradientSpeed = math.max(0.1, Library.Scheme.TopBarGradientSpeed)
                 local MoveTween = TweenService:Create(
                     TopBarGradientEffect,
-                    TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    TweenInfo.new(GradientSpeed, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
                     { Offset = Vector2.new(1, 0) }
                 )
                 MoveTween:Play()
@@ -6598,7 +6620,7 @@ function Library:CreateWindow(WindowInfo)
 
         SearchBox = New("TextBox", {
             BackgroundColor3 = "MainColor",
-            PlaceholderText = "Search",
+            PlaceholderText = "Search sidebar & tabs...",
             Size = WindowInfo.SearchbarSize,
             TextScaled = true,
             Visible = not (WindowInfo.DisableSearch or false),
@@ -6611,7 +6633,7 @@ function Library:CreateWindow(WindowInfo)
         table.insert(
             Library.Corners,
             New("UICorner", {
-                CornerRadius = UDim.new(0, WindowInfo.CornerRadius),
+                CornerRadius = UDim.new(0, math.max(16, WindowInfo.CornerRadius * 2)),
                 Parent = SearchBox,
             })
         )
@@ -6624,6 +6646,7 @@ function Library:CreateWindow(WindowInfo)
         })
         New("UIStroke", {
             Color = "OutlineColor",
+            Transparency = 0.35,
             Parent = SearchBox,
         })
 
@@ -6730,9 +6753,9 @@ function Library:CreateWindow(WindowInfo)
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
             BackgroundColor3 = "BackgroundColor",
             CanvasSize = UDim2.fromScale(0, 0),
-            Position = UDim2.fromOffset(0, 49),
+            Position = UDim2.fromOffset(0, 67),
             ScrollBarThickness = 0,
-            Size = UDim2.new(0, InitialLeftWidth, 1, -70),
+            Size = UDim2.new(0, InitialLeftWidth, 1, -88),
             Parent = MainFrame,
         })
         New("UIListLayout", {
@@ -6866,7 +6889,7 @@ function Library:CreateWindow(WindowInfo)
 
         TitleHolder.Size = UDim2.new(0, Width, 1, 0)
         RightWrapper.Size = UDim2.new(1, -Width - 57 - 1, 1, -16)
-        Tabs.Size = UDim2.new(0, Width, 1, -70)
+        Tabs.Size = UDim2.new(0, Width, 1, -88)
         Container.Size = UDim2.new(1, -Width - 1, 1, -70)
 
         if WindowInfo.EnableCompacting then
@@ -6941,7 +6964,7 @@ function Library:CreateWindow(WindowInfo)
             table.insert(
                 Library.Corners,
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 12),
+                    CornerRadius = UDim.new(0, 14),
                     Parent = TabButton,
                 })
             )
@@ -7812,7 +7835,7 @@ function Library:CreateWindow(WindowInfo)
             table.insert(
                 Library.Corners,
                 New("UICorner", {
-                    CornerRadius = UDim.new(0, 12),
+                    CornerRadius = UDim.new(0, 14),
                     Parent = TabButton,
                 })
             )
