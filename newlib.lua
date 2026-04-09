@@ -1,8 +1,3 @@
---[[
-    Milenium Library FIXED
-    -> Config System Fixed (Save/Load/Auto-Folder)
-    -> No more parse errors or missing functions
-]]
 
 -- Variables 
 local uis = game:GetService("UserInputService") 
