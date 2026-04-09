@@ -717,6 +717,8 @@ function library:window(properties)
         
         -- Satu bar atas: sub-tab (kiri) + search (kanan) — tanpa strip/header terpisah
         local top_bar_h = 50
+        local content_bottom_pad = 12
+        local content_height_inset = 25 + top_bar_h + content_bottom_pad
         items[ "multi_holder" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
             Name = "\0";
@@ -726,7 +728,8 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, -196, 0, top_bar_h);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(255, 255, 255)
+            BackgroundColor3 = rgb(255, 255, 255);
+            ZIndex = 3;
         }); cfg.multi_holder = items[ "multi_holder" ];
 
         items[ "tabs_strip_host" ] = library:create("Frame", {
@@ -823,10 +826,10 @@ function library:window(properties)
             BackgroundTransparency = 1;
             Position = dim2(0, 196, 0, top_bar_h);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, -216, 1, -(25 + top_bar_h + 20));
+            Size = dim2(1, -216, 1, -content_height_inset);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(14, 14, 16);
-            ZIndex = 2;
+            ZIndex = 0;
         });                
 
         library:create( "UICorner" , { Parent = items[ "shadow" ]; CornerRadius = dim(0, 5) });
@@ -888,7 +891,9 @@ function library:window(properties)
             FontFace = fonts.font;
             TextSize = 14;
             BackgroundColor3 = rgb(255, 255, 255)
-        }); library:apply_theme(items[ "other_info" ], "accent", "TextColor3");        
+        }); library:apply_theme(items[ "other_info" ], "accent", "TextColor3");
+
+        cfg.content_height_inset = content_height_inset
     end 
 
     do -- Other
@@ -925,6 +930,7 @@ function library:tab(properties)
     } 
 
     local items = cfg.items; do 
+        local hinset = self.content_height_inset or (25 + 50 + 12)
         items[ "tab_holder" ] = library:create( "Frame" , {
             Parent = library.cache;
             Name = "\0";
@@ -932,9 +938,11 @@ function library:tab(properties)
             BackgroundTransparency = 1;
             Position = dim2(0, 196, 0, 50);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, -216, 1, -95);
+            Size = dim2(1, -216, 1, -hinset);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(255, 255, 255)
+            BackgroundColor3 = rgb(255, 255, 255);
+            ZIndex = 2;
+            ClipsDescendants = true;
         });
         
         items[ "button" ] = library:create( "TextButton" , {
@@ -1005,7 +1013,7 @@ function library:tab(properties)
             FillDirection = Enum.FillDirection.Horizontal;
             VerticalAlignment = Enum.VerticalAlignment.Center;
         });
-        library:create( "UIPadding" , { PaddingTop = dim(0, 0); PaddingBottom = dim(0, 0); Parent = items[ "menu_dropdown_holder" ]; PaddingRight = dim(0, 4); PaddingLeft = dim(0, 0) });
+        library:create( "UIPadding" , { PaddingTop = dim(0, 6); PaddingBottom = dim(0, 6); Parent = items[ "menu_dropdown_holder" ]; PaddingRight = dim(0, 4); PaddingLeft = dim(0, 0) });
 
         for _, page_name in cfg.tabs do
             local data = {items = {}} 
@@ -1065,14 +1073,14 @@ function library:tab(properties)
                     BackgroundTransparency = 1;
                     Name = "\0";
                     BorderColor3 = rgb(0, 0, 0);
-                    Size = dim2(1, -20, 1, -20);
+                    Size = dim2(1, 0, 1, 0);
                     BorderSizePixel = 0;
                     Visible = false;
                     BackgroundColor3 = rgb(255, 255, 255)
                 });
 
-                library:create( "UIListLayout" , { FillDirection = Enum.FillDirection.Vertical; HorizontalFlex = Enum.UIFlexAlignment.Fill; Parent = multi_items[ "tab" ]; Padding = dim(0, 7); SortOrder = Enum.SortOrder.LayoutOrder; VerticalFlex = Enum.UIFlexAlignment.Fill });
-                library:create( "UIPadding" , { PaddingTop = dim(0, 7); PaddingBottom = dim(0, 7); Parent = multi_items[ "tab" ]; PaddingRight = dim(0, 7); PaddingLeft = dim(0, 7) });
+                library:create( "UIListLayout" , { FillDirection = Enum.FillDirection.Vertical; HorizontalFlex = Enum.UIFlexAlignment.Fill; Parent = multi_items[ "tab" ]; Padding = dim(0, 0); SortOrder = Enum.SortOrder.LayoutOrder; VerticalFlex = Enum.UIFlexAlignment.Fill });
+                library:create( "UIPadding" , { PaddingTop = dim(0, 10); PaddingBottom = dim(0, 10); Parent = multi_items[ "tab" ]; PaddingRight = dim(0, 12); PaddingLeft = dim(0, 12) });
             end
 
             data.text = multi_items[ "name" ]
@@ -1087,7 +1095,7 @@ function library:tab(properties)
                 if page and page ~= data then 
                     self.items[ "global_fade" ].BackgroundTransparency = 0
                     library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
-                    page.page.Size = dim2(1, -20, 1, -20)
+                    page.page.Size = dim2(1, 0, 1, 0)
                 end
 
                 if page then
@@ -1099,7 +1107,7 @@ function library:tab(properties)
 
                 library:tween(data.text, {TextColor3 = rgb(255, 255, 255)})
                 library:tween(data.accent, {BackgroundTransparency = 0})
-                library:tween(data.page, {Size = dim2(1, -20, 1, -20)}, Enum.EasingStyle.Quad, 0.4)
+                library:tween(data.page, {Size = dim2(1, 0, 1, 0)}, Enum.EasingStyle.Quad, 0.4)
 
                 data.page.Visible = true
                 data.page.Parent = items["tab_holder"]
@@ -1126,6 +1134,7 @@ function library:tab(properties)
     end 
 
     function cfg.open_tab() 
+        local hinset = self.content_height_inset or (25 + 50 + 12)
         local selected_tab = self.selected_tab
         if selected_tab then 
             if selected_tab[ 5 ] then
@@ -1135,7 +1144,7 @@ function library:tab(properties)
             if selected_tab[ 4 ] ~= items[ "tab_holder" ] then 
                 self.items[ "global_fade" ].BackgroundTransparency = 0
                 library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
-                selected_tab[ 4 ].Size = dim2(1, -216, 1, -95)
+                selected_tab[ 4 ].Size = dim2(1, -216, 1, -hinset)
             end
             library:tween(selected_tab[ 1 ], {BackgroundTransparency = 1, BackgroundColor3 = rgb(29, 29, 29)})
             library:tween(selected_tab[ 2 ], {ImageColor3 = rgb(108, 108, 114)})
@@ -1148,7 +1157,7 @@ function library:tab(properties)
         library:tween(items[ "button" ], {BackgroundTransparency = 0, BackgroundColor3 = themes.preset.accent})
         library:tween(items[ "icon" ], {ImageColor3 = rgb(255, 255, 255)})
         library:tween(items[ "name" ], {TextColor3 = rgb(255, 255, 255)})
-        library:tween(items[ "tab_holder" ], {Size = dim2(1, -216, 1, -95)}, Enum.EasingStyle.Quad, 0.4)
+        library:tween(items[ "tab_holder" ], {Size = dim2(1, -216, 1, -hinset)}, Enum.EasingStyle.Quad, 0.4)
         
         items[ "tab_holder" ].Visible = true 
         items[ "tab_holder" ].Parent = self.items[ "main" ]
@@ -1266,7 +1275,7 @@ function library:section(properties)
             Name = "\0";
             Parent = self.items[ "column" ];
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, 0, cfg.size, -3);
+            Size = dim2(1, 0, cfg.size, 0);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(25, 25, 29)
         });
