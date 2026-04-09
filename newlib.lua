@@ -771,12 +771,11 @@ function library:window(properties)
                 ImageColor3 = rgb(235, 235, 235);
                 Image = library:resolve_icon(icon_name) or "";
             })
-            btn._icon = icon
-            return btn
+            return btn, icon
         end
 
         local minimize_btn = create_control("lucide:minimize", rgb(36, 36, 40))
-        local maximize_btn = create_control("lucide:maximize", rgb(36, 36, 40))
+        local maximize_btn, maximize_icon = create_control("lucide:maximize", rgb(36, 36, 40))
         local close_btn = create_control("lucide:x", rgb(130, 40, 40))
 
         local last_size = items["main"].Size
@@ -800,8 +799,8 @@ function library:window(properties)
                         items["main"].Visible = false
                     end
                 end)
-                if maximize_btn._icon then
-                    maximize_btn._icon.Image = library:resolve_icon("lucide:maximize") or maximize_btn._icon.Image
+                if maximize_icon then
+                    maximize_icon.Image = library:resolve_icon("lucide:maximize") or maximize_icon.Image
                 end
             else
                 is_minimized = false
@@ -827,14 +826,14 @@ function library:window(properties)
                     Position = dim2(0, 12, 0, 12),
                     Size = dim2(0, vp.X - 24, 0, vp.Y - 24),
                 }, Enum.EasingStyle.Quad, 0.25)
-                if maximize_btn._icon then
-                    maximize_btn._icon.Image = library:resolve_icon("lucide:maximize-2") or maximize_btn._icon.Image
+                if maximize_icon then
+                    maximize_icon.Image = library:resolve_icon("lucide:maximize-2") or maximize_icon.Image
                 end
             else
                 is_maximized = false
                 library:tween(items["main"], {Position = last_pos, Size = last_size}, Enum.EasingStyle.Quad, 0.25)
-                if maximize_btn._icon then
-                    maximize_btn._icon.Image = library:resolve_icon("lucide:maximize") or maximize_btn._icon.Image
+                if maximize_icon then
+                    maximize_icon.Image = library:resolve_icon("lucide:maximize") or maximize_icon.Image
                 end
             end
         end
