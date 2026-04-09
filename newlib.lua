@@ -349,7 +349,11 @@ function library:convert_enum(enum)
 end
 
 function library:round(number, float) 
-    local multiplier = 1 / (float or 1)
+    local f = float
+    if f == nil or f == 0 then
+        f = 1
+    end
+    local multiplier = 1 / f
     return floor(number * multiplier + 0.5) / multiplier
 end 
 
@@ -666,6 +670,8 @@ function library:window(properties)
         items[ "global_fade" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
             Name = "\0";
+            Active = false;
+            Selectable = false;
             BackgroundTransparency = 1;
             Position = dim2(0, 196, 0, 0);
             BorderColor3 = rgb(0, 0, 0);
@@ -888,7 +894,7 @@ function library:tab(properties)
             BackgroundColor3 = dd_panel_bg;
             BackgroundTransparency = 0.25;
             BorderSizePixel = 0;
-            Size = dim2(0, 220, 1, 0);
+            Size = dim2(0, 200, 1, 0);
             Position = dim2(0, 0, 0, 0);
         })
         library:create("UICorner", { Parent = items["dropdown_column"]; CornerRadius = dim(0, 10) })
@@ -939,13 +945,18 @@ function library:tab(properties)
             ImageColor3 = rgb(200, 200, 208);
         })
 
-        items[ "menu_list" ] = library:create("Frame", {
+        items[ "menu_list" ] = library:create("ScrollingFrame", {
             Parent = items["dropdown_column"];
             Name = "\0";
             BackgroundTransparency = 1;
             Position = dim2(0, 8, 0, 58);
             Size = dim2(1, -16, 1, -66);
             BorderSizePixel = 0;
+            ScrollBarThickness = 4;
+            ScrollBarImageColor3 = rgb(58, 58, 66);
+            AutomaticCanvasSize = Enum.AutomaticSize.Y;
+            CanvasSize = dim2(0, 0, 0, 0);
+            ScrollingDirection = Enum.ScrollingDirection.Y;
         })
         library:create("UIListLayout", {
             Parent = items["menu_list"];
@@ -978,8 +989,8 @@ function library:tab(properties)
             Name = "\0";
             BackgroundTransparency = 1;
             BorderSizePixel = 0;
-            Position = dim2(0, 220, 0, 0);
-            Size = dim2(1, -220, 1, 0);
+            Position = dim2(0, 200, 0, 0);
+            Size = dim2(1, -200, 1, 0);
         })
 
         local menu_list_open = true
@@ -1071,7 +1082,7 @@ function library:tab(properties)
             function data.open_page()
                 local page = cfg.current_multi; 
                 
-                if page and page.text ~= data.text then 
+                if page and page ~= data then 
                     self.items[ "global_fade" ].BackgroundTransparency = 0
                     library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
                     page.page.Size = dim2(1, 0, 1, 0)
@@ -1134,8 +1145,6 @@ function library:tab(properties)
 
             selected_tab[ 4 ].Visible = false
             selected_tab[ 4 ].Parent = library[ "cache" ]
-            selected_tab[ 5 ].Visible = false
-            selected_tab[ 5 ].Parent = library[ "cache" ]
         end
 
         library:tween(items[ "button" ], {BackgroundTransparency = 0.12, BackgroundColor3 = themes.preset.accent})
@@ -1662,6 +1671,14 @@ function library:toggle(options)
 end 
 
 function library:slider(options) 
+    local step = options.interval
+    if step == nil then
+        step = options.decimal
+    end
+    if step == nil or step == 0 then
+        step = 1
+    end
+
     local cfg = {
         name = options.name or nil,
         suffix = options.suffix or "",
@@ -1670,7 +1687,7 @@ function library:slider(options)
         info = options.info or nil; 
         min = options.min or options.minimum or 0,
         max = options.max or options.maximum or 100,
-        intervals = options.interval or options.decimal or 1,
+        intervals = step,
         default = options.default or 10,
         value = options.default or 10, 
         seperator = options.seperator or options.Seperator or true;
@@ -1813,7 +1830,9 @@ function library:slider(options)
     function cfg.set(value)
         cfg.value = clamp(library:round(value, cfg.intervals), cfg.min, cfg.max)
 
-        library:tween(items[ "fill" ], {Size = dim2((cfg.value - cfg.min) / (cfg.max - cfg.min), cfg.value == cfg.min and 0 or -8, 0, 12)}, Enum.EasingStyle.Linear, 0.05)
+        local span = cfg.max - cfg.min
+        local frac = span ~= 0 and (cfg.value - cfg.min) / span or 0
+        library:tween(items[ "fill" ], {Size = dim2(frac, cfg.value == cfg.min and 0 or -8, 0, 12)}, Enum.EasingStyle.Linear, 0.05)
         items[ "value" ].Text = tostring(cfg.value) .. cfg.suffix
 
         flags[cfg.flag] = cfg.value
@@ -1827,7 +1846,12 @@ function library:slider(options)
 
     library:connection(uis.InputChanged, function(input)
         if cfg.dragging and input.UserInputType == Enum.UserInputType.MouseMovement then 
-            local size_x = (input.Position.X - items[ "slider" ].AbsolutePosition.X) / items[ "slider" ].AbsoluteSize.X
+            local w = items[ "slider" ].AbsoluteSize.X
+            if w <= 0 then
+                return
+            end
+            local size_x = (input.Position.X - items[ "slider" ].AbsolutePosition.X) / w
+            size_x = clamp(size_x, 0, 1)
             local value = ((cfg.max - cfg.min) * size_x) + cfg.min
             cfg.set(value)
         end
