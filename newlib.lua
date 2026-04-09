@@ -620,16 +620,17 @@ function library:window(properties)
                 return
             end
             local t = tick()
-            title_gradient.Offset = vec2(math.sin(t * 0.95) * 1.55, 0)
+            title_gradient.Offset = vec2(math.sin(t * 0.28) * 1.4, 0)
         end)
         
         items[ "multi_holder" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
             Name = "\0";
+            Visible = false;
             BackgroundTransparency = 1;
             Position = dim2(0, 196, 0, 0);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, -196, 0, 56);
+            Size = dim2(1, -196, 0, 0);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255)
         }); cfg.multi_holder = items[ "multi_holder" ];
@@ -666,7 +667,7 @@ function library:window(properties)
             Parent = items[ "main" ];
             Name = "\0";
             BackgroundTransparency = 1;
-            Position = dim2(0, 196, 0, 56);
+            Position = dim2(0, 196, 0, 0);
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, -196, 1, -81);
             BorderSizePixel = 0;
@@ -741,140 +742,56 @@ function library:window(properties)
         library:resizify(items[ "main" ])
     end 
 
-    local is_minimized = false
-    local apply_minimize
-
     do
-        local control_holder = library:create("Frame", {
+        local search_holder = library:create("Frame", {
             Parent = items["main"];
             Name = "\0";
-            BackgroundTransparency = 1;
             AnchorPoint = vec2(1, 0);
-            Position = dim2(1, -10, 0, 10);
-            Size = dim2(0, 98, 0, 24);
+            Position = dim2(1, -14, 0, 10);
+            Size = dim2(0, 300, 0, 36);
+            BackgroundColor3 = rgb(20, 20, 24);
+            BorderSizePixel = 0;
+        })
+        library:create("UICorner", { Parent = search_holder; CornerRadius = dim(0, 18) })
+        library:create("UIStroke", {
+            Parent = search_holder;
+            Color = rgb(48, 48, 56);
+            Thickness = 1;
+            Transparency = 0.35;
+            ApplyStrokeMode = Enum.ApplyStrokeMode.Border;
+        })
+
+        library:create("ImageLabel", {
+            Parent = search_holder;
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Size = dim2(0, 17, 0, 17);
+            Position = dim2(0, 12, 0.5, 0);
+            AnchorPoint = vec2(0, 0.5);
+            Image = library:resolve_icon("lucide:search") or "";
+            ImageColor3 = rgb(125, 125, 135);
             BorderSizePixel = 0;
         })
 
-        library:create("UIListLayout", {
-            Parent = control_holder;
-            FillDirection = Enum.FillDirection.Horizontal;
-            HorizontalAlignment = Enum.HorizontalAlignment.Right;
-            VerticalAlignment = Enum.VerticalAlignment.Center;
-            Padding = dim(0, 6);
-            SortOrder = Enum.SortOrder.LayoutOrder;
+        items["window_search"] = library:create("TextBox", {
+            Parent = search_holder;
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Size = dim2(1, -48, 1, -6);
+            Position = dim2(0, 38, 0, 3);
+            BorderSizePixel = 0;
+            Text = "";
+            PlaceholderText = "Search tabs/groups...";
+            PlaceholderColor3 = rgb(105, 105, 115);
+            TextColor3 = rgb(210, 210, 218);
+            FontFace = fonts.small;
+            TextSize = 14;
+            TextXAlignment = Enum.TextXAlignment.Left;
+            ClearTextOnFocus = false;
         })
-
-        local function create_control(icon_name, bg)
-            local btn = library:create("TextButton", {
-                Parent = control_holder;
-                Name = "\0";
-                Text = "";
-                FontFace = fonts.font;
-                TextSize = 14;
-                TextColor3 = rgb(255, 255, 255);
-                AutoButtonColor = false;
-                Size = dim2(0, 28, 0, 22);
-                BorderSizePixel = 0;
-                BackgroundColor3 = bg;
-            })
-            library:create("UICorner", { Parent = btn; CornerRadius = dim(0, 6) })
-            local icon = library:create("ImageLabel", {
-                Parent = btn;
-                Name = "\0";
-                BackgroundTransparency = 1;
-                AnchorPoint = vec2(0.5, 0.5);
-                Position = dim2(0.5, 0, 0.5, 0);
-                Size = dim2(0, 13, 0, 13);
-                BorderSizePixel = 0;
-                ImageColor3 = rgb(235, 235, 235);
-                Image = library:resolve_icon(icon_name) or "";
-            })
-            return btn, icon
-        end
-
-        local minimize_btn = create_control("lucide:minimize", rgb(36, 36, 40))
-        local maximize_btn, maximize_icon = create_control("lucide:maximize", rgb(36, 36, 40))
-        local close_btn = create_control("lucide:x", rgb(130, 40, 40))
-
-        local last_size = items["main"].Size
-        local last_pos = items["main"].Position
-        local is_maximized = false
-        local min_size = dim2(0, 260, 0, 70)
-
-        apply_minimize = function(state)
-            if state then
-                if not is_maximized then
-                    last_size = items["main"].Size
-                    last_pos = items["main"].Position
-                end
-                is_minimized = true
-                is_maximized = false
-                local hide_pos = dim2(0, last_pos.X.Offset, 0, camera.ViewportSize.Y + 20)
-                library:tween(items["main"], {Position = hide_pos}, Enum.EasingStyle.Quad, 0.25)
-                task.delay(0.27, function()
-                    if is_minimized and items["main"] then
-                        items["main"].Visible = false
-                        items["open_close_button"].Text = "+"
-                    end
-                end)
-                if maximize_icon then
-                    maximize_icon.Image = library:resolve_icon("lucide:maximize") or maximize_icon.Image
-                end
-            else
-                is_minimized = false
-                local hide_pos = dim2(0, last_pos.X.Offset, 0, camera.ViewportSize.Y + 20)
-                items["main"].Visible = true
-                items["main"].Position = hide_pos
-                library:tween(items["main"], {Size = last_size, Position = last_pos}, Enum.EasingStyle.Quad, 0.25)
-                items["open_close_button"].Text = "UI"
-            end
-        end
-
-        local function apply_maximize(state)
-            if state then
-                if is_minimized then
-                    apply_minimize(false)
-                end
-                if not is_maximized then
-                    last_size = items["main"].Size
-                    last_pos = items["main"].Position
-                end
-                is_maximized = true
-                local vp = camera.ViewportSize
-                library:tween(items["main"], {
-                    Position = dim2(0, 12, 0, 12),
-                    Size = dim2(0, vp.X - 24, 0, vp.Y - 24),
-                }, Enum.EasingStyle.Quad, 0.25)
-                if maximize_icon then
-                    maximize_icon.Image = library:resolve_icon("lucide:maximize-2") or maximize_icon.Image
-                end
-            else
-                is_maximized = false
-                library:tween(items["main"], {Position = last_pos, Size = last_size}, Enum.EasingStyle.Quad, 0.25)
-                if maximize_icon then
-                    maximize_icon.Image = library:resolve_icon("lucide:maximize") or maximize_icon.Image
-                end
-            end
-        end
-
-        minimize_btn.MouseButton1Click:Connect(function()
-            apply_minimize(not is_minimized)
-        end)
-
-        maximize_btn.MouseButton1Click:Connect(function()
-            apply_maximize(not is_maximized)
-        end)
-
-        close_btn.MouseButton1Click:Connect(function()
-            library:unload_menu()
-        end)
     end
 
     items["open_close_button"].MouseButton1Click:Connect(function()
-        if is_minimized and apply_minimize then
-            apply_minimize(false)
-            return
-        end
         items["main"].Visible = not items["main"].Visible
         items["open_close_button"].Text = items["main"].Visible and "UI" or "+"
     end)
@@ -896,15 +813,21 @@ function library:tab(properties)
         items = {};
     } 
 
+    local dd_title = properties.DropdownTitle or properties.dropdownTitle or properties.MenuTitle or "General"
+    local dd_icon = properties.DropdownIcon or properties.dropdownIcon or "lucide:puzzle"
+    local dd_row_active = rgb(92, 62, 178)
+    local dd_row_text_dim = rgb(118, 118, 128)
+    local dd_panel_bg = rgb(12, 12, 15)
+
     local items = cfg.items; do 
         items[ "tab_holder" ] = library:create( "Frame" , {
             Parent = library.cache;
             Name = "\0";
             Visible = false;
             BackgroundTransparency = 1;
-            Position = dim2(0, 196, 0, 56);
+            Position = dim2(0, 196, 0, 0);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, -216, 1, -101);
+            Size = dim2(1, -216, 1, -81);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255)
         });
@@ -959,21 +882,114 @@ function library:tab(properties)
         library:create( "UICorner" , { Parent = items[ "button" ]; CornerRadius = dim(0, 9) });
         library:create( "UIStroke" , { Color = rgb(23, 23, 29); Parent = items[ "button" ]; Enabled = true; Transparency = 0.45; ApplyStrokeMode = Enum.ApplyStrokeMode.Border });
 
-        items[ "multi_section_button_holder" ] = library:create( "Frame" , {
-            Parent = library.cache;
-            BackgroundTransparency = 1;
+        items[ "dropdown_column" ] = library:create("Frame", {
+            Parent = items["tab_holder"];
             Name = "\0";
-            Visible = false;
-            BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, 0, 1, 0);
+            BackgroundColor3 = dd_panel_bg;
+            BackgroundTransparency = 0.25;
             BorderSizePixel = 0;
+            Size = dim2(0, 220, 1, 0);
+            Position = dim2(0, 0, 0, 0);
+        })
+        library:create("UICorner", { Parent = items["dropdown_column"]; CornerRadius = dim(0, 10) })
+        library:create("UIStroke", { Parent = items["dropdown_column"]; Color = rgb(28, 28, 34); Transparency = 0.5; Thickness = 1; ApplyStrokeMode = Enum.ApplyStrokeMode.Border })
+
+        items[ "group_header" ] = library:create("TextButton", {
+            Parent = items["dropdown_column"];
+            Name = "\0";
+            Text = "";
+            AutoButtonColor = false;
+            BackgroundColor3 = rgb(28, 28, 32);
+            BorderSizePixel = 0;
+            Size = dim2(1, -16, 0, 40);
+            Position = dim2(0, 8, 0, 10);
+        })
+        library:create("UICorner", { Parent = items["group_header"]; CornerRadius = dim(0, 8) })
+
+        items[ "group_icon" ] = library:create("ImageLabel", {
+            Parent = items["group_header"];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Size = dim2(0, 18, 0, 18);
+            Position = dim2(0, 10, 0.5, 0);
+            AnchorPoint = vec2(0, 0.5);
+            Image = library:resolve_icon(dd_icon) or "";
+            ImageColor3 = rgb(235, 235, 240);
+        })
+        items[ "group_title" ] = library:create("TextLabel", {
+            Parent = items["group_header"];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            FontFace = fonts.font;
+            TextSize = 15;
+            TextColor3 = rgb(240, 240, 245);
+            Text = dd_title;
+            TextXAlignment = Enum.TextXAlignment.Left;
+            Size = dim2(1, -70, 1, 0);
+            Position = dim2(0, 36, 0, 0);
+        })
+        items[ "group_chevron" ] = library:create("ImageLabel", {
+            Parent = items["group_header"];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Size = dim2(0, 16, 0, 16);
+            Position = dim2(1, -12, 0.5, 0);
+            AnchorPoint = vec2(1, 0.5);
+            Image = library:resolve_icon("lucide:chevrons-up-down") or "";
+            ImageColor3 = rgb(200, 200, 208);
+        })
+
+        items[ "menu_list" ] = library:create("Frame", {
+            Parent = items["dropdown_column"];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Position = dim2(0, 8, 0, 58);
+            Size = dim2(1, -16, 1, -66);
+            BorderSizePixel = 0;
+        })
+        library:create("UIListLayout", {
+            Parent = items["menu_list"];
+            Padding = dim(0, 4);
+            SortOrder = Enum.SortOrder.LayoutOrder;
+            FillDirection = Enum.FillDirection.Vertical;
+            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+        })
+
+        items[ "menu_dropdown_holder" ] = library:create("Frame", {
+            Parent = items["menu_list"];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            Visible = true;
+            BorderSizePixel = 0;
+            Size = dim2(1, 0, 0, 0);
+            AutomaticSize = Enum.AutomaticSize.Y;
             BackgroundColor3 = rgb(255, 255, 255)
         });
-        
-        library:create( "UIListLayout" , { Parent = items[ "multi_section_button_holder" ]; Padding = dim(0, 7); SortOrder = Enum.SortOrder.LayoutOrder; FillDirection = Enum.FillDirection.Horizontal });
-        library:create( "UIPadding" , { PaddingTop = dim(0, 8); PaddingBottom = dim(0, 7); Parent = items[ "multi_section_button_holder" ]; PaddingRight = dim(0, 7); PaddingLeft = dim(0, 7) });                        
+        library:create("UIListLayout", {
+            Parent = items["menu_dropdown_holder"];
+            Padding = dim(0, 4);
+            SortOrder = Enum.SortOrder.LayoutOrder;
+            FillDirection = Enum.FillDirection.Vertical;
+            HorizontalAlignment = Enum.HorizontalAlignment.Center;
+        })
 
-        for _, section in cfg.tabs do
+        items[ "page_host" ] = library:create("Frame", {
+            Parent = items["tab_holder"];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            BorderSizePixel = 0;
+            Position = dim2(0, 220, 0, 0);
+            Size = dim2(1, -220, 1, 0);
+        })
+
+        local menu_list_open = true
+        items["group_header"].MouseButton1Click:Connect(function()
+            menu_list_open = not menu_list_open
+            items["menu_list"].Visible = menu_list_open
+            items["group_chevron"].Rotation = menu_list_open and 0 or 180
+        end)
+
+        for _, page_name in cfg.tabs do
             local data = {items = {}} 
             local multi_items = data.items; do 
                 multi_items[ "button" ] = library:create( "TextButton" , {
@@ -982,57 +998,60 @@ function library:tab(properties)
                     BorderColor3 = rgb(0, 0, 0);
                     AutoButtonColor = false;
                     Text = "";
-                    Parent = items[ "multi_section_button_holder" ];
+                    Parent = items[ "menu_dropdown_holder" ];
                     Name = "\0";
-                    Size = dim2(0, 0, 0, 39);
+                    Size = dim2(1, 0, 0, 32);
                     BackgroundTransparency = 1;
-                    ClipsDescendants = true;
+                    ClipsDescendants = false;
                     BorderSizePixel = 0;
-                    AutomaticSize = Enum.AutomaticSize.X;
-                    TextSize = 16;
-                    BackgroundColor3 = rgb(25, 25, 29)
+                    TextSize = 15;
+                    BackgroundColor3 = rgb(18, 18, 20)
                 });
+                library:create("UICorner", { Parent = multi_items["button"]; CornerRadius = dim(0, 6) })
+
+                multi_items[ "row_icon" ] = library:create("ImageLabel", {
+                    Parent = multi_items["button"];
+                    Name = "\0";
+                    BackgroundTransparency = 1;
+                    Size = dim2(0, 14, 0, 14);
+                    Position = dim2(0, 10, 0.5, 0);
+                    AnchorPoint = vec2(0, 0.5);
+                    Image = library:resolve_icon("lucide:list") or "";
+                    ImageColor3 = rgb(92, 92, 100);
+                })
                 
                 multi_items[ "name" ] = library:create( "TextLabel" , {
                     FontFace = fonts.font;
-                    TextColor3 = rgb(62, 62, 63);
+                    TextColor3 = dd_row_text_dim;
                     BorderColor3 = rgb(0, 0, 0);
-                    Text = section;
+                    Text = page_name;
                     Parent = multi_items[ "button" ];
                     Name = "\0";
-                    Size = dim2(0, 0, 1, 0);
+                    Size = dim2(1, -34, 1, 0);
+                    Position = dim2(0, 30, 0, 0);
                     BackgroundTransparency = 1;
                     TextXAlignment = Enum.TextXAlignment.Left;
                     BorderSizePixel = 0;
-                    AutomaticSize = Enum.AutomaticSize.XY;
-                    TextSize = 16;
+                    TextSize = 15;
                     BackgroundColor3 = rgb(255, 255, 255)
                 });
                 
-                library:create( "UIPadding" , { Parent = multi_items[ "name" ]; PaddingRight = dim(0, 5); PaddingLeft = dim(0, 5) });
-                
                 multi_items[ "accent" ] = library:create( "Frame" , {
                     BorderColor3 = rgb(0, 0, 0);
-                    AnchorPoint = vec2(0, 1);
                     Parent = multi_items[ "button" ];
                     BackgroundTransparency = 1;
-                    Position = dim2(0, 10, 1, 4);
-                    Name = "\0";
-                    Size = dim2(1, -20, 0, 6);
+                    Visible = false;
+                    Size = dim2(0, 0, 0, 0);
                     BorderSizePixel = 0;
                     BackgroundColor3 = themes.preset.accent
-                }); library:apply_theme(multi_items[ "accent" ], "accent", "BackgroundColor3");
-                
-                library:create( "UICorner" , { Parent = multi_items[ "accent" ]; CornerRadius = dim(0, 999) });
-                library:create( "UIPadding" , { Parent = multi_items[ "button" ]; PaddingRight = dim(0, 10); PaddingLeft = dim(0, 10) });
-                library:create( "UICorner" , { Parent = multi_items[ "button" ]; CornerRadius = dim(0, 7) }); 
+                });
 
                 multi_items[ "tab" ] = library:create( "Frame" , {
                     Parent = library.cache;
                     BackgroundTransparency = 1;
                     Name = "\0";
                     BorderColor3 = rgb(0, 0, 0);
-                    Size = dim2(1, -20, 1, -20);
+                    Size = dim2(1, 0, 1, 0);
                     BorderSizePixel = 0;
                     Visible = false;
                     BackgroundColor3 = rgb(255, 255, 255)
@@ -1045,6 +1064,7 @@ function library:tab(properties)
             data.text = multi_items[ "name" ]
             data.accent = multi_items[ "accent" ]
             data.button = multi_items[ "button" ]
+            data.row_icon = multi_items[ "row_icon" ]
             data.page = multi_items[ "tab" ]
             data.parent = setmetatable(data, library):sub_tab({}).items[ "tab_parent" ]
 
@@ -1054,37 +1074,43 @@ function library:tab(properties)
                 if page and page.text ~= data.text then 
                     self.items[ "global_fade" ].BackgroundTransparency = 0
                     library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
-                    page.page.Size = dim2(1, -20, 1, -20)
+                    page.page.Size = dim2(1, 0, 1, 0)
                 end
 
                 if page then
-                    library:tween(page.text, {TextColor3 = rgb(108, 108, 114)})
-                    library:tween(page.accent, {BackgroundTransparency = 1})
-                    library:tween(page.button, {BackgroundTransparency = 0.85, BackgroundColor3 = rgb(25, 25, 29)})
+                    library:tween(page.text, {TextColor3 = dd_row_text_dim})
+                    library:tween(page.button, {BackgroundTransparency = 1, BackgroundColor3 = rgb(18, 18, 20)})
+                    if page.row_icon then
+                        page.row_icon.Image = library:resolve_icon("lucide:list") or page.row_icon.Image
+                        library:tween(page.row_icon, {ImageColor3 = rgb(92, 92, 100)})
+                    end
                     page.page.Visible = false
                     page.page.Parent = library[ "cache" ] 
                 end 
                 
                 library:tween(data.text, {TextColor3 = rgb(255, 255, 255)})
-                library:tween(data.accent, {BackgroundTransparency = 0})
-                library:tween(data.button, {BackgroundTransparency = 0.35})
+                library:tween(data.button, {BackgroundTransparency = 0, BackgroundColor3 = dd_row_active})
+                if data.row_icon then
+                    data.row_icon.Image = library:resolve_icon("lucide:corner-down-right") or data.row_icon.Image
+                    library:tween(data.row_icon, {ImageColor3 = rgb(255, 255, 255)})
+                end
                 library:tween(data.page, {Size = dim2(1, 0, 1, 0)}, Enum.EasingStyle.Quad, 0.4)
 
                 data.page.Visible = true
-                data.page.Parent = items["tab_holder"]
+                data.page.Parent = items["page_host"]
                 cfg.current_multi = data
                 library:close_element()
             end
 
             multi_items[ "button" ].MouseEnter:Connect(function()
                 if cfg.current_multi ~= data then
-                    library:tween(multi_items["button"], {BackgroundTransparency = 0.7}, Enum.EasingStyle.Quad, 0.15)
+                    library:tween(multi_items["button"], {BackgroundTransparency = 0, BackgroundColor3 = rgb(34, 34, 40)}, Enum.EasingStyle.Quad, 0.12)
                 end
             end)
 
             multi_items[ "button" ].MouseLeave:Connect(function()
                 if cfg.current_multi ~= data then
-                    library:tween(multi_items["button"], {BackgroundTransparency = 0.85}, Enum.EasingStyle.Quad, 0.15)
+                    library:tween(multi_items["button"], {BackgroundTransparency = 1, BackgroundColor3 = rgb(18, 18, 20)}, Enum.EasingStyle.Quad, 0.12)
                 end
             end)
 
@@ -1100,7 +1126,7 @@ function library:tab(properties)
             if selected_tab[ 4 ] ~= items[ "tab_holder" ] then 
                 self.items[ "global_fade" ].BackgroundTransparency = 0
                 library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
-                selected_tab[ 4 ].Size = dim2(1, -216, 1, -101)
+                selected_tab[ 4 ].Size = dim2(1, -216, 1, -81)
             end
             library:tween(selected_tab[ 1 ], {BackgroundTransparency = 0.9, BackgroundColor3 = rgb(29, 29, 29)})
             library:tween(selected_tab[ 2 ], {ImageColor3 = rgb(72, 72, 73)})
@@ -1119,15 +1145,13 @@ function library:tab(properties)
         
         items[ "tab_holder" ].Visible = true 
         items[ "tab_holder" ].Parent = self.items[ "main" ]
-        items[ "multi_section_button_holder" ].Visible = true 
-        items[ "multi_section_button_holder" ].Parent = self.items[ "multi_holder" ]
 
         self.selected_tab = {
             items[ "button" ];
             items[ "icon" ];
             items[ "name" ];
             items[ "tab_holder" ];
-            items[ "multi_section_button_holder" ];
+            items[ "dropdown_column" ];
         }
         library:close_element()
     end
@@ -1697,7 +1721,7 @@ function library:slider(options)
                 Text = cfg.info;
                 Parent = items[ "slider_object" ];
                 Name = "\0";
-                Position = dim2(0, 5, 0, 37);
+                Position = dim2(0, 5, 0, 52);
                 Size = dim2(1, -10, 0, 0);
                 BackgroundTransparency = 1;
                 TextXAlignment = Enum.TextXAlignment.Left;
@@ -1714,9 +1738,9 @@ function library:slider(options)
             Parent = items[ "slider_object" ];
             Name = "\0";
             BackgroundTransparency = 1;
-            Position = dim2(0, 4, 0, 23);
+            Position = dim2(0, 4, 0, 28);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, 0, 0, 12);
+            Size = dim2(1, 0, 0, 22);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255)
         });
@@ -1733,7 +1757,7 @@ function library:slider(options)
             Parent = items[ "right_components" ];
             Name = "\0";
             Position = dim2(1, 0, 0, 0);
-            Size = dim2(1, -4, 0, 4);
+            Size = dim2(1, -4, 0, 12);
             BorderSizePixel = 0;
             TextSize = 14;
             BackgroundColor3 = rgb(33, 33, 35)
@@ -1745,7 +1769,7 @@ function library:slider(options)
             Name = "\0";
             Parent = items[ "slider" ];
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(0.5, 0, 0, 4);
+            Size = dim2(0.5, 0, 0, 12);
             BorderSizePixel = 0;
             BackgroundColor3 = themes.preset.accent
         });  library:apply_theme(items[ "fill" ], "accent", "BackgroundColor3");
@@ -1758,13 +1782,13 @@ function library:slider(options)
             Name = "\0";
             Position = dim2(1, 0, 0.5, 0);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(0, 12, 0, 12);
+            Size = dim2(0, 18, 0, 18);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(244, 244, 244)
         });
         
         library:create( "UICorner" , { Parent = items[ "circle" ]; CornerRadius = dim(0, 999) });
-        library:create( "UIPadding" , { Parent = items[ "right_components" ]; PaddingTop = dim(0, 4) });
+        library:create( "UIPadding" , { Parent = items[ "right_components" ]; PaddingTop = dim(0, 5) });
         
         items[ "value" ] = library:create( "TextLabel" , {
             FontFace = fonts.small;
@@ -1789,7 +1813,7 @@ function library:slider(options)
     function cfg.set(value)
         cfg.value = clamp(library:round(value, cfg.intervals), cfg.min, cfg.max)
 
-        library:tween(items[ "fill" ], {Size = dim2((cfg.value - cfg.min) / (cfg.max - cfg.min), cfg.value == cfg.min and 0 or -4, 0, 2)}, Enum.EasingStyle.Linear, 0.05)
+        library:tween(items[ "fill" ], {Size = dim2((cfg.value - cfg.min) / (cfg.max - cfg.min), cfg.value == cfg.min and 0 or -8, 0, 12)}, Enum.EasingStyle.Linear, 0.05)
         items[ "value" ].Text = tostring(cfg.value) .. cfg.suffix
 
         flags[cfg.flag] = cfg.value
