@@ -219,12 +219,12 @@ local Library = {
 
     IsLightTheme = false,
     Scheme = {
-        BackgroundColor = Color3.fromRGB(15, 15, 15),
-        MainColor = Color3.fromRGB(25, 25, 25),
-        AccentColor = Color3.fromRGB(125, 85, 255),
-        OutlineColor = Color3.fromRGB(40, 40, 40),
+        BackgroundColor = Color3.fromRGB(0, 0, 0),
+        MainColor = Color3.fromRGB(10, 10, 10),
+        AccentColor = Color3.fromRGB(46, 119, 255),
+        OutlineColor = Color3.fromRGB(28, 28, 28),
         FontColor = Color3.new(1, 1, 1),
-        Font = Font.fromEnum(Enum.Font.Code),
+        Font = Font.fromEnum(Enum.Font.Gotham),
 
         RedColor = Color3.fromRGB(255, 50, 50),
         DestructiveColor = Color3.fromRGB(220, 38, 38),
@@ -315,7 +315,7 @@ local Templates = {
         CornerRadius = 4,
         NotifySide = "Right",
         ShowCustomCursor = true,
-        Font = Enum.Font.Code,
+        Font = Enum.Font.Gotham,
         ToggleKeybind = Enum.KeyCode.RightControl,
         MobileButtonsSide = "Left",
         UnlockMouseWhileOpen = true,
@@ -6076,7 +6076,7 @@ function Library:Notify(...)
                 BackgroundTransparency = 1,
                 Size = UDim2.fromOffset(24, 24),
                 Image = ParsedIcon.Url,
-                ImageColor3 = Data.IconColor or "AccentColor",
+                ImageColor3 = Data.IconColor or "FontColor",
                 ImageRectOffset = ParsedIcon.ImageRectOffset,
                 ImageRectSize = ParsedIcon.ImageRectSize,
                 Parent = ContentContainer,
@@ -6354,8 +6354,6 @@ function Library:CreateWindow(WindowInfo)
     local CurrentTabDescription
     local ResizeButton
     local Tabs
-    local SidebarHeader
-    local SidebarHeaderTitle
     local Container
     local BackgroundImage
     local BottomBackground
@@ -6440,6 +6438,49 @@ function Library:CreateWindow(WindowInfo)
             Parent = MainFrame,
         })
         Library:MakeDraggable(MainFrame, TopBar, false, true)
+        local TopBarGradient = New("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+            ZIndex = 0,
+            Parent = TopBar,
+        })
+        local TopBarGradientFill = New("Frame", {
+            BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+            BorderSizePixel = 0,
+            Size = UDim2.fromScale(1, 1),
+            ZIndex = 0,
+            Parent = TopBarGradient,
+        })
+        local TopBarGradientEffect = New("UIGradient", {
+            Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0, Color3.fromRGB(13, 25, 72)),
+                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(49, 94, 255)),
+                ColorSequenceKeypoint.new(1, Color3.fromRGB(13, 25, 72)),
+            }),
+            Offset = Vector2.new(-1, 0),
+            Rotation = 25,
+            Transparency = NumberSequence.new({
+                NumberSequenceKeypoint.new(0, 0.78),
+                NumberSequenceKeypoint.new(0.5, 0.6),
+                NumberSequenceKeypoint.new(1, 0.78),
+            }),
+            Parent = TopBarGradientFill,
+        })
+        task.spawn(function()
+            while TopBarGradient and TopBarGradient.Parent do
+                local MoveTween = TweenService:Create(
+                    TopBarGradientEffect,
+                    TweenInfo.new(5, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut),
+                    { Offset = Vector2.new(1, 0) }
+                )
+                MoveTween:Play()
+                MoveTween.Completed:Wait()
+                if not (TopBarGradient and TopBarGradient.Parent) then
+                    break
+                end
+                TopBarGradientEffect.Offset = Vector2.new(-1, 0)
+            end
+        end)
 
         --// Title
         TitleHolder = New("Frame", {
@@ -6685,63 +6726,13 @@ function Library:CreateWindow(WindowInfo)
             Parent = ResizeButton,
         })
 
-        --// Tabs \\--
-        SidebarHeader = New("Frame", {
-            BackgroundColor3 = function()
-                return Library:GetBetterColor(Library.Scheme.MainColor, 2)
-            end,
-            Position = UDim2.fromOffset(8, 56),
-            Size = UDim2.new(0, InitialLeftWidth - 16, 0, 46),
-            Parent = MainFrame,
-        })
-        table.insert(
-            Library.Corners,
-            New("UICorner", {
-                CornerRadius = UDim.new(0, math.max(10, math.floor(WindowInfo.CornerRadius * 0.8))),
-                Parent = SidebarHeader,
-            })
-        )
-        New("UIPadding", {
-            PaddingBottom = UDim.new(0, 8),
-            PaddingLeft = UDim.new(0, 12),
-            PaddingRight = UDim.new(0, 12),
-            PaddingTop = UDim.new(0, 8),
-            Parent = SidebarHeader,
-        })
-        New("UIListLayout", {
-            FillDirection = Enum.FillDirection.Horizontal,
-            HorizontalAlignment = Enum.HorizontalAlignment.Left,
-            VerticalAlignment = Enum.VerticalAlignment.Center,
-            Padding = UDim.new(0, 8),
-            Parent = SidebarHeader,
-        })
-        if WindowInfo.Icon then
-            local SidebarIcon = Library:GetCustomIcon(WindowInfo.Icon)
-            New("ImageLabel", {
-                Image = SidebarIcon.Url,
-                ImageRectOffset = SidebarIcon.ImageRectOffset,
-                ImageRectSize = SidebarIcon.ImageRectSize,
-                BackgroundTransparency = 1,
-                Size = UDim2.fromOffset(24, 24),
-                Parent = SidebarHeader,
-            })
-        end
-        SidebarHeaderTitle = New("TextLabel", {
-            BackgroundTransparency = 1,
-            Size = UDim2.new(1, -34, 1, 0),
-            Text = WindowInfo.Title,
-            TextSize = 22,
-            TextXAlignment = Enum.TextXAlignment.Left,
-            Parent = SidebarHeader,
-        })
-
         Tabs = New("ScrollingFrame", {
             AutomaticCanvasSize = Enum.AutomaticSize.Y,
             BackgroundColor3 = "BackgroundColor",
             CanvasSize = UDim2.fromScale(0, 0),
-            Position = UDim2.fromOffset(0, 109),
+            Position = UDim2.fromOffset(0, 49),
             ScrollBarThickness = 0,
-            Size = UDim2.new(0, InitialLeftWidth, 1, -130),
+            Size = UDim2.new(0, InitialLeftWidth, 1, -70),
             Parent = MainFrame,
         })
         New("UIListLayout", {
@@ -6783,9 +6774,6 @@ function Library:CreateWindow(WindowInfo)
         assert(typeof(title) == "string", "Expected string for title got: " .. typeof(title))
 
         WindowTitle.Text = title
-        if SidebarHeaderTitle then
-            SidebarHeaderTitle.Text = title
-        end
         WindowInfo.Title = title
     end
 
@@ -6878,8 +6866,7 @@ function Library:CreateWindow(WindowInfo)
 
         TitleHolder.Size = UDim2.new(0, Width, 1, 0)
         RightWrapper.Size = UDim2.new(1, -Width - 57 - 1, 1, -16)
-        SidebarHeader.Size = UDim2.new(0, Width - 16, 0, 46)
-        Tabs.Size = UDim2.new(0, Width, 1, -130)
+        Tabs.Size = UDim2.new(0, Width, 1, -70)
         Container.Size = UDim2.new(1, -Width - 1, 1, -70)
 
         if WindowInfo.EnableCompacting then
@@ -6909,16 +6896,19 @@ function Library:CreateWindow(WindowInfo)
     function Window:AddTab(...)
         local Name = nil
         local Icon = nil
+        local IconColor = nil
         local Description = nil
 
         if select("#", ...) == 1 and typeof(...) == "table" then
             local Info = select(1, ...)
             Name = Info.Name or "Tab"
             Icon = Info.Icon
+            IconColor = Info.IconColor
             Description = Info.Description
         else
             Name = select(1, ...)
             Icon = select(2, ...)
+            IconColor = select(4, ...)
             Description = select(3, ...)
         end
 
@@ -6932,6 +6922,10 @@ function Library:CreateWindow(WindowInfo)
 
         Icon = Library:GetCustomIcon(Icon)
         do
+            local HideDuplicateTitleTab = typeof(Name) == "string"
+                and typeof(WindowInfo.Title) == "string"
+                and Name:lower() == WindowInfo.Title:lower()
+
             TabButton = New("TextButton", {
                 BackgroundColor3 = function()
                     return Library:GetBetterColor(Library.Scheme.MainColor, 2)
@@ -6941,6 +6935,9 @@ function Library:CreateWindow(WindowInfo)
                 Text = "",
                 Parent = Tabs,
             })
+            if HideDuplicateTitleTab then
+                TabButton.Visible = false
+            end
             table.insert(
                 Library.Corners,
                 New("UICorner", {
@@ -6971,7 +6968,7 @@ function Library:CreateWindow(WindowInfo)
             if Icon then
                 TabIcon = New("ImageLabel", {
                     Image = Icon.Url,
-                    ImageColor3 = Icon.Custom and "WhiteColor" or "AccentColor",
+                    ImageColor3 = IconColor or (Icon.Custom and "WhiteColor" or "FontColor"),
                     ImageRectOffset = Icon.ImageRectOffset,
                     ImageRectSize = Icon.ImageRectSize,
                     ImageTransparency = 0.25,
@@ -7322,7 +7319,7 @@ function Library:CreateWindow(WindowInfo)
                 if BoxIcon then
                     New("ImageLabel", {
                         Image = BoxIcon.Url,
-                        ImageColor3 = BoxIcon.Custom and "WhiteColor" or "AccentColor",
+                        ImageColor3 = BoxIcon.Custom and "WhiteColor" or "FontColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
                         Position = UDim2.fromOffset(6, 6),
@@ -7532,7 +7529,7 @@ function Library:CreateWindow(WindowInfo)
                 if BoxIcon then
                     ButtonIcon = New("ImageLabel", {
                         Image = BoxIcon.Url,
-                        ImageColor3 = BoxIcon.Custom and "WhiteColor" or "AccentColor",
+                        ImageColor3 = BoxIcon.Custom and "WhiteColor" or "FontColor",
                         ImageRectOffset = BoxIcon.ImageRectOffset,
                         ImageRectSize = BoxIcon.ImageRectSize,
                         ImageTransparency = 0.5,
@@ -7746,7 +7743,10 @@ function Library:CreateWindow(WindowInfo)
         end
 
         function Tab:SetVisible(Visible: boolean)
-            TabButton.Visible = Visible
+            local IsDuplicateTitleTab = typeof(Name) == "string"
+                and typeof(WindowInfo.Title) == "string"
+                and Name:lower() == WindowInfo.Title:lower()
+            TabButton.Visible = Visible and not IsDuplicateTitleTab
 
             if not Visible and Library.ActiveTab == Tab then
                 Tab:Hide()
@@ -7774,16 +7774,19 @@ function Library:CreateWindow(WindowInfo)
     function Window:AddKeyTab(...)
         local Name = nil
         local Icon = nil
+        local IconColor = nil
         local Description = nil
 
         if select("#", ...) == 1 and typeof(...) == "table" then
             local Info = select(1, ...)
             Name = Info.Name or "Tab"
             Icon = Info.Icon
+            IconColor = Info.IconColor
             Description = Info.Description
         else
             Name = select(1, ...) or "Tab"
             Icon = select(2, ...)
+            IconColor = select(4, ...)
             Description = select(3, ...)
         end
 
@@ -7836,7 +7839,7 @@ function Library:CreateWindow(WindowInfo)
             if Icon then
                 TabIcon = New("ImageLabel", {
                     Image = Icon.Url,
-                    ImageColor3 = Icon.Custom and "WhiteColor" or "AccentColor",
+                    ImageColor3 = IconColor or (Icon.Custom and "WhiteColor" or "FontColor"),
                     ImageRectOffset = Icon.ImageRectOffset,
                     ImageRectSize = Icon.ImageRectSize,
                     ImageTransparency = 0.25,
