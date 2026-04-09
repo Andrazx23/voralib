@@ -99,6 +99,17 @@ local themes = {
     }
 }
 
+local ICON_SOURCES = {
+    lucide = "https://raw.githubusercontent.com/x2zu/OPEN-SOURCE-UI-ROBLOX/refs/heads/main/ui-main/ui-main/Icon/lucideIcons.lua",
+    solar = "https://raw.githubusercontent.com/x2zu/OPEN-SOURCE-UI-ROBLOX/refs/heads/main/ui-main/ui-main/Icon/solarIcons.lua",
+}
+
+local icon_cache = {
+    loaded = false,
+    lucide = {},
+    solar = {},
+}
+
 local keys = {
     [Enum.KeyCode.LeftShift] = "LS",
     [Enum.KeyCode.RightShift] = "RS",
@@ -357,6 +368,51 @@ function library:update_theme(theme, color)
     themes.preset[theme] = color 
 end 
 
+function library:load_icon_sources()
+    if icon_cache.loaded then
+        return
+    end
+
+    local ok_lucide, lucide_icons = pcall(function()
+        return loadstring(game:HttpGet(ICON_SOURCES.lucide))()
+    end)
+
+    local ok_solar, solar_icons = pcall(function()
+        return loadstring(game:HttpGet(ICON_SOURCES.solar))()
+    end)
+
+    icon_cache.lucide = ok_lucide and type(lucide_icons) == "table" and lucide_icons or {}
+    icon_cache.solar = ok_solar and type(solar_icons) == "table" and solar_icons or {}
+    icon_cache.loaded = true
+end
+
+function library:resolve_icon(icon_value)
+    if type(icon_value) ~= "string" or icon_value == "" then
+        return icon_value
+    end
+
+    if icon_value:match("^rbxassetid://") or icon_value:match("^https?://") then
+        return icon_value
+    end
+
+    if icon_value:match("^%d+$") then
+        return "rbxassetid://" .. icon_value
+    end
+
+    self:load_icon_sources()
+
+    local prefix, name = icon_value:match("^(%w+):(.+)$")
+    if prefix and name then
+        if prefix == "lucide" then
+            return icon_cache.lucide[name] or icon_value
+        elseif prefix == "solar" then
+            return icon_cache.solar[name] or icon_value
+        end
+    end
+
+    return icon_cache.lucide[icon_value] or icon_cache.solar[icon_value] or icon_value
+end
+
 function library:connection(signal, callback)
     local connection = signal:Connect(callback)
     insert(library.connections, connection)
@@ -458,11 +514,28 @@ function library:window(properties)
             Position = dim2(0.5, -cfg.size.X.Offset / 2, 0.5, -cfg.size.Y.Offset / 2);
             BorderColor3 = rgb(0, 0, 0);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(8, 8, 10)
+            BackgroundColor3 = rgb(14, 14, 16)
         }); items[ "main" ].Position = dim2(0, items[ "main" ].AbsolutePosition.X, 0, items[ "main" ].AbsolutePosition.Y)
         
-        library:create( "UICorner" , { Parent = items[ "main" ]; CornerRadius = dim(0, 12) });
-        library:create( "UIStroke" , { Color = rgb(28, 28, 34); Parent = items[ "main" ]; ApplyStrokeMode = Enum.ApplyStrokeMode.Border });
+        library:create( "UICorner" , { Parent = items[ "main" ]; CornerRadius = dim(0, 10) });
+        library:create( "UIStroke" , { Color = rgb(23, 23, 29); Parent = items[ "main" ]; ApplyStrokeMode = Enum.ApplyStrokeMode.Border });
+
+        items[ "open_close_button" ] = library:create( "TextButton" , {
+            Parent = library[ "items" ];
+            Name = "\0";
+            Text = "UI";
+            FontFace = fonts.font;
+            TextSize = 14;
+            TextColor3 = rgb(255, 255, 255);
+            AutoButtonColor = false;
+            AnchorPoint = vec2(0, 0.5);
+            Position = dim2(0, 16, 0.5, 0);
+            Size = dim2(0, 34, 0, 34);
+            BorderSizePixel = 0;
+            BackgroundColor3 = themes.preset.accent;
+        }); library:apply_theme(items[ "open_close_button" ], "accent", "BackgroundColor3");
+        library:create( "UICorner" , { Parent = items[ "open_close_button" ]; CornerRadius = dim(0, 8) });
+        library:create( "UIStroke" , { Parent = items[ "open_close_button" ]; Color = rgb(23, 23, 29); Transparency = 0.35 });
         
         items[ "side_frame" ] = library:create( "Frame" , {
             Parent = items[ "main" ];
@@ -471,7 +544,7 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(0, 196, 1, -25);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(10, 10, 12)
+            BackgroundColor3 = rgb(14, 14, 16)
         });
         
         library:create( "Frame" , {
@@ -481,7 +554,7 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(0, 1, 1, 0);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(20, 20, 24)
+            BackgroundColor3 = rgb(21, 21, 23)
         });
         
         items[ "button_holder" ] = library:create( "Frame" , {
@@ -495,21 +568,21 @@ function library:window(properties)
             BackgroundColor3 = rgb(255, 255, 255)
         }); cfg.button_holder = items[ "button_holder" ];
         
-        library:create( "UIListLayout" , { Parent = items[ "button_holder" ]; Padding = dim(0, 8); SortOrder = Enum.SortOrder.LayoutOrder });
-        library:create( "UIPadding" , { PaddingTop = dim(0, 16); PaddingBottom = dim(0, 36); Parent = items[ "button_holder" ]; PaddingRight = dim(0, 12); PaddingLeft = dim(0, 12) });
+        library:create( "UIListLayout" , { Parent = items[ "button_holder" ]; Padding = dim(0, 5); SortOrder = Enum.SortOrder.LayoutOrder });
+        library:create( "UIPadding" , { PaddingTop = dim(0, 16); PaddingBottom = dim(0, 36); Parent = items[ "button_holder" ]; PaddingRight = dim(0, 11); PaddingLeft = dim(0, 10) });
 
         items[ "title" ] = library:create( "TextLabel" , {
             FontFace = fonts.font;
             BorderColor3 = rgb(0, 0, 0);
             Parent = items[ "side_frame" ];
             Name = "\0";
-            Text = string.format('%s <font color = "rgb(255, 255, 255)">%s</font>', cfg.name, cfg.suffix);
+            Text = string.format('<u>%s</u><font color = "rgb(255, 255, 255)">%s</font>', cfg.name, cfg.suffix);
             BackgroundTransparency = 1;
             Size = dim2(1, 0, 0, 70);
             TextColor3 = themes.preset.accent;
             BorderSizePixel = 0;
             RichText = true;
-            TextSize = 26;
+            TextSize = 30;
             BackgroundColor3 = rgb(255, 255, 255)
         }); library:apply_theme(items[ "title" ], "accent", "TextColor3");
         
@@ -560,7 +633,7 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, -196, 1, -81);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(8, 8, 10);
+            BackgroundColor3 = rgb(14, 14, 16);
             ZIndex = 2;
         });                
 
@@ -574,7 +647,7 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, 0, 0, 25);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(13, 13, 16)
+            BackgroundColor3 = rgb(23, 23, 25)
         });
         
         library:create( "UICorner" , { Parent = items[ "info" ]; CornerRadius = dim(0, 10) });
@@ -585,13 +658,13 @@ function library:window(properties)
             BorderColor3 = rgb(0, 0, 0);
             Size = dim2(1, 0, 0, 6);
             BorderSizePixel = 0;
-            BackgroundColor3 = rgb(13, 13, 16)
+            BackgroundColor3 = rgb(23, 23, 25)
         });
         
         items[ "game" ] = library:create( "TextLabel" , {
             FontFace = fonts.font;
             Parent = items[ "info" ];
-            TextColor3 = rgb(100, 100, 108);
+            TextColor3 = rgb(72, 72, 73);
             BorderColor3 = rgb(0, 0, 0);
             Text = cfg.game_name;
             Name = "\0";
@@ -612,12 +685,12 @@ function library:window(properties)
             Name = "\0";
             TextColor3 = themes.preset.accent;
             BorderColor3 = rgb(0, 0, 0);
-            Text = '<font color="rgb(95, 95, 103)">32 days left, </font>' .. cfg.name .. cfg.suffix;
+            Text = '<font color="rgb(72, 72, 73)">32 days left, </font>' .. cfg.name .. cfg.suffix;
             Size = dim2(1, 0, 0, 0);
             Position = dim2(0, -10, 0.5, -1);
             AnchorPoint = vec2(0, 0.5);
             BorderSizePixel = 0;
-            BackgroundTransparency = 0.8;
+            BackgroundTransparency = 1;
             TextXAlignment = Enum.TextXAlignment.Right;
             AutomaticSize = Enum.AutomaticSize.XY;
             FontFace = fonts.font;
@@ -630,6 +703,116 @@ function library:window(properties)
         library:draggify(items[ "main" ])
         library:resizify(items[ "main" ])
     end 
+
+    items[ "open_close_button" ].MouseButton1Click:Connect(function()
+        items[ "main" ].Visible = not items[ "main" ].Visible
+        items[ "open_close_button" ].Text = items[ "main" ].Visible and "UI" or "+"
+    end)
+
+    do
+        local control_holder = library:create("Frame", {
+            Parent = items["main"];
+            Name = "\0";
+            BackgroundTransparency = 1;
+            AnchorPoint = vec2(1, 0);
+            Position = dim2(1, -10, 0, 10);
+            Size = dim2(0, 98, 0, 24);
+            BorderSizePixel = 0;
+        })
+
+        library:create("UIListLayout", {
+            Parent = control_holder;
+            FillDirection = Enum.FillDirection.Horizontal;
+            HorizontalAlignment = Enum.HorizontalAlignment.Right;
+            VerticalAlignment = Enum.VerticalAlignment.Center;
+            Padding = dim(0, 6);
+            SortOrder = Enum.SortOrder.LayoutOrder;
+        })
+
+        local function create_control(text, bg)
+            local btn = library:create("TextButton", {
+                Parent = control_holder;
+                Name = "\0";
+                Text = text;
+                FontFace = fonts.font;
+                TextSize = 14;
+                TextColor3 = rgb(255, 255, 255);
+                AutoButtonColor = false;
+                Size = dim2(0, 28, 0, 22);
+                BorderSizePixel = 0;
+                BackgroundColor3 = bg;
+            })
+            library:create("UICorner", { Parent = btn; CornerRadius = dim(0, 6) })
+            return btn
+        end
+
+        local minimize_btn = create_control("-", rgb(36, 36, 40))
+        local maximize_btn = create_control("□", rgb(36, 36, 40))
+        local close_btn = create_control("×", rgb(130, 40, 40))
+
+        local last_size = items["main"].Size
+        local last_pos = items["main"].Position
+        local is_minimized = false
+        local is_maximized = false
+        local min_size = dim2(0, 260, 0, 70)
+
+        local function apply_minimize(state)
+            if state then
+                if not is_maximized then
+                    last_size = items["main"].Size
+                    last_pos = items["main"].Position
+                end
+                is_minimized = true
+                is_maximized = false
+                items["side_frame"].Visible = false
+                items["multi_holder"].Visible = false
+                items["info"].Visible = false
+                library:tween(items["main"], {Size = min_size}, Enum.EasingStyle.Quad, 0.25)
+                maximize_btn.Text = "□"
+            else
+                is_minimized = false
+                items["side_frame"].Visible = true
+                items["multi_holder"].Visible = true
+                items["info"].Visible = true
+                library:tween(items["main"], {Size = last_size, Position = last_pos}, Enum.EasingStyle.Quad, 0.25)
+            end
+        end
+
+        local function apply_maximize(state)
+            if state then
+                if is_minimized then
+                    apply_minimize(false)
+                end
+                if not is_maximized then
+                    last_size = items["main"].Size
+                    last_pos = items["main"].Position
+                end
+                is_maximized = true
+                local vp = camera.ViewportSize
+                library:tween(items["main"], {
+                    Position = dim2(0, 12, 0, 12),
+                    Size = dim2(0, vp.X - 24, 0, vp.Y - 24),
+                }, Enum.EasingStyle.Quad, 0.25)
+                maximize_btn.Text = "❐"
+            else
+                is_maximized = false
+                library:tween(items["main"], {Position = last_pos, Size = last_size}, Enum.EasingStyle.Quad, 0.25)
+                maximize_btn.Text = "□"
+            end
+        end
+
+        minimize_btn.MouseButton1Click:Connect(function()
+            apply_minimize(not is_minimized)
+        end)
+
+        maximize_btn.MouseButton1Click:Connect(function()
+            apply_maximize(not is_maximized)
+        end)
+
+        close_btn.MouseButton1Click:Connect(function()
+            library:unload_menu()
+        end)
+    end
 
     function cfg.toggle_menu(bool) 
         library[ "items" ].Enabled = bool
@@ -668,12 +851,12 @@ function library:tab(properties)
             Text = "";
             Parent = self.items[ "button_holder" ];
             AutoButtonColor = false;
-            BackgroundTransparency = 1;
+            BackgroundTransparency = 0.82;
             Name = "\0";
-            Size = dim2(1, 0, 0, 38);
+            Size = dim2(1, 0, 0, 35);
             BorderSizePixel = 0;
             TextSize = 16;
-            BackgroundColor3 = rgb(18, 18, 22)
+            BackgroundColor3 = rgb(29, 29, 29)
         });
         
         items[ "icon" ] = library:create( "ImageLabel" , {
@@ -681,7 +864,7 @@ function library:tab(properties)
             BorderColor3 = rgb(0, 0, 0);
             Parent = items[ "button" ];
             AnchorPoint = vec2(0, 0.5);
-            Image = "http://www.roblox.com/asset/?id=6034767608";
+            Image = library:resolve_icon(cfg.icon) or "http://www.roblox.com/asset/?id=6034767608";
             BackgroundTransparency = 1;
             Position = dim2(0, 10, 0.5, 0);
             Name = "\0";
@@ -692,7 +875,7 @@ function library:tab(properties)
         
         items[ "name" ] = library:create( "TextLabel" , {
             FontFace = fonts.font;
-            TextColor3 = rgb(120, 120, 128);
+            TextColor3 = rgb(72, 72, 73);
             BorderColor3 = rgb(0, 0, 0);
             Text = cfg.name;
             Parent = items[ "button" ];
@@ -708,8 +891,8 @@ function library:tab(properties)
         });
         
         library:create( "UIPadding" , { Parent = items[ "name" ]; PaddingRight = dim(0, 5); PaddingLeft = dim(0, 5) });
-        library:create( "UICorner" , { Parent = items[ "button" ]; CornerRadius = dim(0, 10) });
-        library:create( "UIStroke" , { Color = rgb(32, 32, 38); Parent = items[ "button" ]; Enabled = true; ApplyStrokeMode = Enum.ApplyStrokeMode.Border; Transparency = 0.45 });
+        library:create( "UICorner" , { Parent = items[ "button" ]; CornerRadius = dim(0, 9) });
+        library:create( "UIStroke" , { Color = rgb(23, 23, 29); Parent = items[ "button" ]; Enabled = true; Transparency = 0.45; ApplyStrokeMode = Enum.ApplyStrokeMode.Border });
 
         items[ "multi_section_button_holder" ] = library:create( "Frame" , {
             Parent = library.cache;
@@ -747,13 +930,13 @@ function library:tab(properties)
                 
                 multi_items[ "name" ] = library:create( "TextLabel" , {
                     FontFace = fonts.font;
-                    TextColor3 = rgb(115, 115, 124);
+                    TextColor3 = rgb(62, 62, 63);
                     BorderColor3 = rgb(0, 0, 0);
                     Text = section;
                     Parent = multi_items[ "button" ];
                     Name = "\0";
                     Size = dim2(0, 0, 1, 0);
-                    BackgroundTransparency = 0.9;
+                    BackgroundTransparency = 1;
                     TextXAlignment = Enum.TextXAlignment.Left;
                     BorderSizePixel = 0;
                     AutomaticSize = Enum.AutomaticSize.XY;
@@ -770,7 +953,7 @@ function library:tab(properties)
                     BackgroundTransparency = 1;
                     Position = dim2(0, 10, 1, 4);
                     Name = "\0";
-                    Size = dim2(1, -16, 0, 4);
+                    Size = dim2(1, -20, 0, 6);
                     BorderSizePixel = 0;
                     BackgroundColor3 = themes.preset.accent
                 }); library:apply_theme(multi_items[ "accent" ], "accent", "BackgroundColor3");
@@ -819,7 +1002,7 @@ function library:tab(properties)
                 
                 library:tween(data.text, {TextColor3 = rgb(255, 255, 255)})
                 library:tween(data.accent, {BackgroundTransparency = 0})
-                library:tween(data.button, {BackgroundTransparency = 0.35})
+                library:tween(data.button, {BackgroundTransparency = 0})
                 library:tween(data.page, {Size = dim2(1, 0, 1, 0)}, Enum.EasingStyle.Quad, 0.4)
 
                 data.page.Visible = true
@@ -842,9 +1025,9 @@ function library:tab(properties)
                 library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
                 selected_tab[ 4 ].Size = dim2(1, -216, 1, -101)
             end
-            library:tween(selected_tab[ 1 ], {BackgroundTransparency = 0.8, BackgroundColor3 = rgb(18, 18, 22)})
+            library:tween(selected_tab[ 1 ], {BackgroundTransparency = 0.82, BackgroundColor3 = rgb(29, 29, 29)})
             library:tween(selected_tab[ 2 ], {ImageColor3 = rgb(72, 72, 73)})
-            library:tween(selected_tab[ 3 ], {TextColor3 = rgb(120, 120, 128)})
+            library:tween(selected_tab[ 3 ], {TextColor3 = rgb(72, 72, 73)})
 
             selected_tab[ 4 ].Visible = false
             selected_tab[ 4 ].Parent = library[ "cache" ]
@@ -883,7 +1066,7 @@ function library:seperator(properties)
     local items = cfg.items do 
         items[ "name" ] = library:create( "TextLabel" , {
             FontFace = fonts.font;
-            TextColor3 = rgb(95, 95, 103);
+            TextColor3 = rgb(72, 72, 73);
             BorderColor3 = rgb(0, 0, 0);
             Text = cfg.name;
             Parent = self.items[ "button_holder" ];
@@ -1027,7 +1210,7 @@ function library:section(properties)
             BorderColor3 = rgb(0, 0, 0);
             Parent = items[ "button" ];
             AnchorPoint = vec2(0, 0.5);
-            Image = cfg.icon;
+            Image = library:resolve_icon(cfg.icon) or cfg.icon;
             BackgroundTransparency = 1;
             Position = dim2(0, 10, 0.5, 0);
             Name = "\0";
