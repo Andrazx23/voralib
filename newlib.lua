@@ -75,7 +75,7 @@ getgenv().library = {
     connections = {},   
     notifications = {notifs = {}},
     current_open = nil,
-    cache = Instance.new("Frame")
+    cache = Instance.new("Frame"),
 }
 
 -- AUTO FOLDER CREATION FIX
@@ -286,7 +286,7 @@ function library:resizify(frame, options)
         grip.Visible = frame.Visible
 
         grip.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 resizing = true
                 start_mouse = input.Position
                 start_size = frame.Size
@@ -294,13 +294,13 @@ function library:resizify(frame, options)
         end)
 
         library:connection(uis.InputEnded, function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
                 resizing = false
             end
         end)
 
         library:connection(uis.InputChanged, function(input)
-            if not resizing or input.UserInputType ~= Enum.UserInputType.MouseMovement then
+            if not resizing or (input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch) then
                 return
             end
             apply_size_from_delta(input.Position)
@@ -366,7 +366,7 @@ function library:draggify(frame)
     local start 
 
     frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             start = input.Position
             start_size = frame.Position
@@ -374,13 +374,13 @@ function library:draggify(frame)
     end)
 
     frame.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = false
         end
     end)
 
     library:connection(uis.InputChanged, function(input, game_event) 
-        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             local viewport_x = camera.ViewportSize.X
             local viewport_y = camera.ViewportSize.Y
 
@@ -584,13 +584,25 @@ local function window_resolve_rbx_image(s, default_id)
 end
 
 function library:window(properties)
+    local vw, vh = camera.ViewportSize.X, camera.ViewportSize.Y
+    local is_touch_ui = uis.TouchEnabled and not uis.MouseEnabled
+    local default_w = is_touch_ui and floor(vw * 0.92 - 16) or floor(vw * 0.58)
+    local default_h = is_touch_ui and floor(vh * 0.62 - gui_offset * 0.5) or floor(vh * 0.56)
+    default_w = clamp(default_w, 300, vw - 8)
+    default_h = clamp(default_h, 280, vh - 8)
+    local sidebar_w = is_touch_ui and 148 or 196
+    local content_margin = sidebar_w + 20
+    local search_w_ui = is_touch_ui and 200 or 320
+
     local cfg = { 
         suffix = properties.suffix or properties.Suffix or "tech";
         name = properties.name or properties.Name or "nebula";
         game_name = properties.gameInfo or properties.game_info or properties.GameInfo or "Milenium for Counter-Strike: Global Offensive";
         logo = properties.logo or properties.Logo or "116918679098324";
         toggle_button_image = properties.toggleButtonImage or properties.toggle_ui_image or properties.ToggleUiImage or "113154475025105";
-        size = properties.size or properties.Size or dim2(0, 650, 0, 435);
+        size = properties.size or properties.Size or dim2(0, default_w, 0, default_h);
+        sidebar_w = sidebar_w;
+        content_margin = content_margin;
         selected_tab = nil;
         items = {};
     }
@@ -616,11 +628,12 @@ function library:window(properties)
             Parent = library[ "items" ];
             Size = cfg.size;
             Name = "\0";
-            Position = dim2(0.5, -cfg.size.X.Offset / 2, 0.5, -cfg.size.Y.Offset / 2);
+            AnchorPoint = vec2(0.5, 0.5);
+            Position = dim2(0.5, 0, 0.5, 0);
             BorderColor3 = rgb(0, 0, 0);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(14, 14, 16)
-        }); items[ "main" ].Position = dim2(0, items[ "main" ].AbsolutePosition.X, 0, items[ "main" ].AbsolutePosition.Y)
+        })
         
         library:create( "UICorner" , { Parent = items[ "main" ]; CornerRadius = dim(0, 10) });
         library:create( "UIStroke" , { Color = rgb(23, 23, 29); Parent = items[ "main" ]; ApplyStrokeMode = Enum.ApplyStrokeMode.Border });
@@ -660,7 +673,7 @@ function library:window(properties)
             BackgroundTransparency = 1;
             Name = "\0";
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(0, 196, 1, -25);
+            Size = dim2(0, sidebar_w, 1, -25);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(14, 14, 16)
         });
@@ -773,9 +786,9 @@ function library:window(properties)
             title_gradient.Offset = vec2(math.sin(t * 0.35) * 1.6 + math.sin(t * 0.11) * 0.25, math.cos(t * 0.19) * 0.08)
         end)
         
-        -- Bar atas: judul + subtitle + sub-tab + search (lapang)
-        local search_w, search_h = 320, 40
-        local header_left_pad, header_gap, search_right_mar = 14, 18, 20
+        -- Bar atas: judul + subtitle + sub-tab + search (lapang); search lebih sempit di touch
+        local search_w, search_h = search_w_ui, 40
+        local header_left_pad, header_gap, search_right_mar = 14, 18, is_touch_ui and 12 or 20
         local header_reserve = header_left_pad + header_gap + search_w + search_right_mar
         local top_bar_h = 78
         local content_bottom_pad = 10
@@ -785,9 +798,9 @@ function library:window(properties)
             Name = "\0";
             Visible = true;
             BackgroundTransparency = 1;
-            Position = dim2(0, 196, 0, 0);
+            Position = dim2(0, sidebar_w, 0, 0);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, -196, 0, top_bar_h);
+            Size = dim2(1, -sidebar_w, 0, top_bar_h);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255);
             ZIndex = 3;
@@ -984,9 +997,9 @@ function library:window(properties)
             Active = false;
             Selectable = false;
             BackgroundTransparency = 1;
-            Position = dim2(0, 196, 0, top_bar_h);
+            Position = dim2(0, sidebar_w, 0, top_bar_h);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, -216, 1, -content_height_inset);
+            Size = dim2(1, -content_margin, 1, -content_height_inset);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(14, 14, 16);
             ZIndex = 0;
@@ -1059,9 +1072,11 @@ function library:window(properties)
 
     do -- Other
         library:draggify(items[ "main" ])
+        local min_rw = math.max(260, floor(cfg.size.X.Offset * 0.42))
+        local min_rh = math.max(220, floor(cfg.size.Y.Offset * 0.42))
         items[ "resize_grip" ] = library:resizify(items[ "main" ], {
-            min_width = cfg.size.X.Offset;
-            min_height = cfg.size.Y.Offset;
+            min_width = min_rw;
+            min_height = min_rh;
             grip_size = 26;
             inside_corner = true;
         })
@@ -1083,6 +1098,8 @@ function library:window(properties)
 end 
 
 function library:tab(properties)
+    local win_sw = self.sidebar_w or 196
+    local win_cm = self.content_margin or (win_sw + 20)
     local cfg = {
         name = properties.name or properties.Name or "visuals"; 
         icon = properties.icon or properties.Icon or "http://www.roblox.com/asset/?id=6034767608";
@@ -1093,6 +1110,8 @@ function library:tab(properties)
         pages = {}; 
         current_multi = nil; 
         items = {};
+        sidebar_w = win_sw;
+        content_margin = win_cm;
     } 
 
     local items = cfg.items; do 
@@ -1103,9 +1122,9 @@ function library:tab(properties)
             Name = "\0";
             Visible = false;
             BackgroundTransparency = 1;
-            Position = dim2(0, 196, 0, top_y);
+            Position = dim2(0, win_sw, 0, top_y);
             BorderColor3 = rgb(0, 0, 0);
-            Size = dim2(1, -216, 1, -hinset);
+            Size = dim2(1, -win_cm, 1, -hinset);
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255);
             ZIndex = 2;
@@ -1319,7 +1338,7 @@ function library:tab(properties)
             if selected_tab[ 4 ] and selected_tab[ 4 ] ~= items[ "tab_holder" ] then 
                 self.items[ "global_fade" ].BackgroundTransparency = 0
                 library:tween(self.items[ "global_fade" ], {BackgroundTransparency = 1}, Enum.EasingStyle.Quad, 0.4)
-                selected_tab[ 4 ].Size = dim2(1, -216, 1, -hinset)
+                selected_tab[ 4 ].Size = dim2(1, -cfg.content_margin, 1, -hinset)
             end
             if selected_tab[ 1 ] then library:tween(selected_tab[ 1 ], {BackgroundTransparency = 1, BackgroundColor3 = rgb(29, 29, 29)}) end
             if selected_tab[ 2 ] then library:tween(selected_tab[ 2 ], {ImageColor3 = rgb(108, 108, 114)}) end
@@ -1334,7 +1353,7 @@ function library:tab(properties)
         library:tween(items[ "button" ], {BackgroundTransparency = 0, BackgroundColor3 = themes.preset.accent})
         library:tween(items[ "icon" ], {ImageColor3 = rgb(255, 255, 255)})
         library:tween(items[ "name" ], {TextColor3 = rgb(255, 255, 255)})
-        library:tween(items[ "tab_holder" ], {Size = dim2(1, -216, 1, -hinset)}, Enum.EasingStyle.Quad, 0.4)
+        library:tween(items[ "tab_holder" ], {Size = dim2(1, -cfg.content_margin, 1, -hinset)}, Enum.EasingStyle.Quad, 0.4)
         
         items[ "tab_holder" ].Visible = true 
         items[ "tab_holder" ].Parent = self.items[ "main" ]
@@ -1424,7 +1443,8 @@ function library:column(properties)
             BorderSizePixel = 0;
             BackgroundColor3 = rgb(255, 255, 255)
         });
-        library:create( "UIPadding" , { PaddingBottom = dim(0, 10); Parent = items[ "column" ] });
+        local col_pad_x = camera.ViewportSize.X < 540 and 6 or 0
+        library:create( "UIPadding" , { PaddingBottom = dim(0, 10); PaddingLeft = dim(0, col_pad_x); PaddingRight = dim(0, col_pad_x); Parent = items[ "column" ] });
         library:create( "UIListLayout" , { Parent = items[ "column" ]; HorizontalFlex = Enum.UIFlexAlignment.Fill; Padding = dim(0, 10); FillDirection = Enum.FillDirection.Vertical; SortOrder = Enum.SortOrder.LayoutOrder });
     end 
     return setmetatable(cfg, library)
@@ -1443,7 +1463,8 @@ function library:sub_tab(properties)
             Visible = true;
             BackgroundColor3 = rgb(255, 255, 255)
         });
-        library:create( "UIListLayout" , { FillDirection = Enum.FillDirection.Horizontal; HorizontalFlex = Enum.UIFlexAlignment.Fill; VerticalFlex = Enum.UIFlexAlignment.Fill; Parent = items[ "tab_parent" ]; Padding = dim(0, 7); SortOrder = Enum.SortOrder.LayoutOrder; });
+        local sub_gap = camera.ViewportSize.X < 540 and 4 or 7
+        library:create( "UIListLayout" , { FillDirection = Enum.FillDirection.Horizontal; HorizontalFlex = Enum.UIFlexAlignment.Fill; VerticalFlex = Enum.UIFlexAlignment.Fill; Parent = items[ "tab_parent" ]; Padding = dim(0, sub_gap); SortOrder = Enum.SortOrder.LayoutOrder; });
     end
     return setmetatable(cfg, library)
 end 
@@ -1780,49 +1801,46 @@ function library:toggle(options)
             library:create( "UICorner" , { Parent = items[ "outline" ]; CornerRadius = dim(0, 4) });
             library:create( "UIGradient" , { Enabled = false; Parent = items[ "outline" ]; Color = rgbseq{rgbkey(0, rgb(211, 211, 211)), rgbkey(1, rgb(211, 211, 211))} });  
         else 
+            -- Gaya oldlib: trek pill + thumb bulat (CreateToggle)
+            local track_w, track_h = 44, 24
+            local thumb_sz = 18
+            local thumb_x_on = track_w - thumb_sz - 2
+            local thumb_x_off = 2
             items[ "toggle_button" ] = library:create( "TextButton" , {
                 FontFace = fonts.font;
                 TextColor3 = rgb(0, 0, 0);
                 BorderColor3 = rgb(0, 0, 0);
                 Text = "";
                 LayoutOrder = 2;
+                AutoButtonColor = false;
                 AnchorPoint = vec2(1, 0.5);
                 Parent = items[ "right_components" ];
                 Name = "\0";
                 Position = dim2(1, -9, 0.5, 0);
-                Size = dim2(0, 36, 0, 18);
+                Size = dim2(0, track_w, 0, track_h);
                 BorderSizePixel = 0;
                 TextSize = 14;
-                BackgroundColor3 = themes.preset.accent
-            }); library:apply_theme(items[ "toggle_button" ], "accent", "BackgroundColor3");
-            
-            library:create( "UICorner" , { Parent = items[ "toggle_button" ]; CornerRadius = dim(0, 999) });
-            
-            items[ "inline" ] = library:create( "Frame" , {
+                BackgroundColor3 = rgb(45, 45, 50);
+            })
+            library:create( "UICorner" , { Parent = items[ "toggle_button" ]; CornerRadius = dim(1, 0) })
+            items[ "toggle_thumb" ] = library:create( "Frame" , {
                 Parent = items[ "toggle_button" ];
-                Size = dim2(1, -2, 1, -2);
                 Name = "\0";
-                BorderMode = Enum.BorderMode.Inset;
+                AnchorPoint = vec2(0, 0.5);
+                Position = dim2(0, thumb_x_off, 0.5, 0);
                 BorderColor3 = rgb(0, 0, 0);
-                Position = dim2(0, 1, 0, 1);
+                Size = dim2(0, thumb_sz, 0, thumb_sz);
                 BorderSizePixel = 0;
-                BackgroundColor3 = themes.preset.accent
-            }); library:apply_theme(items[ "inline" ], "accent", "BackgroundColor3");
-            
-            library:create( "UICorner" , { Parent = items[ "inline" ]; CornerRadius = dim(0, 999) });
-            library:create( "UIGradient" , { Color = rgbseq{rgbkey(0, rgb(211, 211, 211)), rgbkey(1, rgb(211, 211, 211))}; Parent = items[ "inline" ] });
-            
-            items[ "circle" ] = library:create( "Frame" , {
-                Parent = items[ "inline" ];
-                Name = "\0";
-                Position = dim2(1, -14, 0, 2);
-                BorderColor3 = rgb(0, 0, 0);
-                Size = dim2(0, 12, 0, 12);
-                BorderSizePixel = 0;
-                BackgroundColor3 = rgb(255, 255, 255)
-            });
-            
-            library:create( "UICorner" , { Parent = items[ "circle" ]; CornerRadius = dim(0, 999) });                        
+                BackgroundColor3 = rgb(255, 255, 255);
+                ZIndex = 2;
+            })
+            library:create( "UICorner" , { Parent = items[ "toggle_thumb" ]; CornerRadius = dim(1, 0) })
+            cfg._toggle_thumb_x_on = thumb_x_on
+            cfg._toggle_thumb_x_off = thumb_x_off
+            items[ "name" ].Size = dim2(1, -58, 0, 0)
+            if items[ "info" ] then
+                items[ "info" ].Size = dim2(1, -58, 0, 0)
+            end
         end 
     end;
     
@@ -1832,9 +1850,10 @@ function library:toggle(options)
             library:tween(items[ "toggle_button" ], {BackgroundColor3 = bool and themes.preset.accent or rgb(67, 67, 68)})
             library:tween(items[ "outline" ], {BackgroundColor3 = bool and themes.preset.accent or rgb(22, 22, 24)})
         else
-            library:tween(items[ "toggle_button" ], {BackgroundColor3 = bool and themes.preset.accent or rgb(58, 58, 62)}, Enum.EasingStyle.Quad)
-            library:tween(items[ "inline" ], {BackgroundColor3 = bool and themes.preset.accent or rgb(50, 50, 50)}, Enum.EasingStyle.Quad)
-            library:tween(items[ "circle" ], {BackgroundColor3 = bool and rgb(255, 255, 255) or rgb(86, 86, 88), Position = bool and dim2(1, -14, 0, 2) or dim2(0, 2, 0, 2)}, Enum.EasingStyle.Quad)
+            local xon = cfg._toggle_thumb_x_on or 24
+            local xoff = cfg._toggle_thumb_x_off or 2
+            library:tween(items[ "toggle_button" ], {BackgroundColor3 = bool and themes.preset.accent or rgb(45, 45, 50)}, Enum.EasingStyle.Quint, 0.3)
+            library:tween(items[ "toggle_thumb" ], {Position = bool and dim2(0, xon, 0.5, 0) or dim2(0, xoff, 0.5, 0)}, Enum.EasingStyle.Quint, 0.3)
         end
 
         cfg.callback(bool)
@@ -1868,6 +1887,7 @@ function library:toggle(options)
         });
     end
 
+    cfg.enabled = cfg.default
     cfg.set(cfg.default)
     config_flags[cfg.flag] = cfg.set
     return setmetatable(cfg, library)
