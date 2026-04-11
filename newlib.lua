@@ -2019,8 +2019,14 @@ function Library:Unload()
     Library.Unloaded = true
     ScreenGui:Destroy()
 
-    if game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("vorahub_ToggleButton") then
-        game:GetService("Players").LocalPlayer.PlayerGui.vorahub_ToggleButton:Destroy()
+    do
+        local pg = game:GetService("Players").LocalPlayer.PlayerGui
+        for _, toggleName in { "vorahub_ToggleButton", "molahub_ToggleButton" } do
+            local existing = pg:FindFirstChild(toggleName)
+            if existing then
+                existing:Destroy()
+            end
+        end
     end
 
     getgenv().Library = nil
@@ -5977,6 +5983,20 @@ function Library:CreateWindow(WindowInfo)
     Library.ToggleKeybind = WindowInfo.ToggleKeybind
     Library.GlobalSearch = WindowInfo.GlobalSearch
 
+    local windowTitleLower = string.lower(tostring(WindowInfo.Title or ""))
+    local isMolaHub = string.find(windowTitleLower, "molahub", 1, true) ~= nil
+    if isMolaHub then
+        Library.Scheme.BackgroundColor = Color3.fromRGB(10, 12, 25)
+        Library.Scheme.MainColor = Color3.fromRGB(25, 30, 50)
+        Library.Scheme.AccentColor = Color3.fromRGB(0, 140, 210)
+        Library.Scheme.OutlineColor = Color3.fromRGB(40, 60, 90)
+    else
+        Library.Scheme.BackgroundColor = Color3.fromRGB(15, 15, 15)
+        Library.Scheme.MainColor = Color3.fromRGB(25, 25, 25)
+        Library.Scheme.AccentColor = Color3.fromRGB(141, 242, 151)
+        Library.Scheme.OutlineColor = Color3.fromRGB(52, 95, 58)
+    end
+
     local IsDefaultSearchbarSize = WindowInfo.SearchbarSize == UDim2.fromScale(1, 1)
     local MainFrame
     local SearchBox
@@ -7819,20 +7839,26 @@ function Library:CreateWindow(WindowInfo)
         Library.IsRobloxFocused = false
     end))
 
-    -- Setup Persistent Toggle Button
-    if Players.LocalPlayer.PlayerGui:FindFirstChild("vorahub_ToggleButton") then
-        Players.LocalPlayer.PlayerGui.vorahub_ToggleButton:Destroy()
+    -- Setup Persistent Toggle Button (Vorahub vs MolaHub from window title)
+    do
+        local pg = Players.LocalPlayer.PlayerGui
+        for _, toggleName in { "vorahub_ToggleButton", "molahub_ToggleButton" } do
+            local existing = pg:FindFirstChild(toggleName)
+            if existing then
+                existing:Destroy()
+            end
+        end
     end
 
     local toggleButtonGui = Instance.new("ScreenGui")
-    toggleButtonGui.Name = "vorahub_ToggleButton"
+    toggleButtonGui.Name = isMolaHub and "molahub_ToggleButton" or "vorahub_ToggleButton"
     toggleButtonGui.ResetOnSpawn = false
     toggleButtonGui.DisplayOrder = 100
     toggleButtonGui.Parent = Players.LocalPlayer.PlayerGui
 
     local toggleButton = Instance.new("ImageButton")
     toggleButton.Name = "ToggleButton"
-    toggleButton.Image = "rbxassetid://113154475025105"
+    toggleButton.Image = isMolaHub and "rbxassetid://77026411691065" or "rbxassetid://113154475025105"
     toggleButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     toggleButton.Size = UDim2.fromOffset(50, 50)
     toggleButton.AnchorPoint = Vector2.new(1, 0.5)
@@ -7844,7 +7870,7 @@ function Library:CreateWindow(WindowInfo)
     corner.Parent = toggleButton
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(45, 45, 45)
+    stroke.Color = isMolaHub and Color3.fromRGB(40, 60, 90) or Color3.fromRGB(141, 242, 151)
     stroke.Thickness = 2
     stroke.Parent = toggleButton
 
