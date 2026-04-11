@@ -5998,17 +5998,11 @@ function Library:CreateWindow(WindowInfo)
         or string.find(windowTitleLower, "mola hub", 1, true) ~= nil
         or string.find(windowTitleLower, "mola-hub", 1, true) ~= nil
     local isMolaHub = isMolaHubByTitle or isMolaHubByIcon
-    if isMolaHub then
-        Library.Scheme.BackgroundColor = Color3.fromRGB(10, 12, 25)
-        Library.Scheme.MainColor = Color3.fromRGB(25, 30, 50)
-        Library.Scheme.AccentColor = Color3.fromRGB(0, 140, 210)
-        Library.Scheme.OutlineColor = Color3.fromRGB(40, 60, 90)
-    else
-        Library.Scheme.BackgroundColor = Color3.fromRGB(15, 15, 15)
-        Library.Scheme.MainColor = Color3.fromRGB(25, 25, 25)
-        Library.Scheme.AccentColor = Color3.fromRGB(141, 242, 151)
-        Library.Scheme.OutlineColor = Color3.fromRGB(52, 95, 58)
-    end
+    -- Skema mint sama untuk Vora & Mola (biru navy sebelumnya hanya dipakai di cabang Mola dan bikin Mola kelihatan "Vorahub")
+    Library.Scheme.BackgroundColor = Color3.fromRGB(15, 15, 15)
+    Library.Scheme.MainColor = Color3.fromRGB(25, 25, 25)
+    Library.Scheme.AccentColor = Color3.fromRGB(141, 242, 151)
+    Library.Scheme.OutlineColor = Color3.fromRGB(52, 95, 58)
 
     local IsDefaultSearchbarSize = WindowInfo.SearchbarSize == UDim2.fromScale(1, 1)
     local MainFrame
@@ -7883,7 +7877,7 @@ function Library:CreateWindow(WindowInfo)
     corner.Parent = toggleButton
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = isMolaHub and Color3.fromRGB(40, 60, 90) or Color3.fromRGB(141, 242, 151)
+    stroke.Color = Color3.fromRGB(141, 242, 151)
     stroke.Thickness = 2
     stroke.Parent = toggleButton
 
