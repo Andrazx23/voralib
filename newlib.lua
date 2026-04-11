@@ -5992,7 +5992,9 @@ function Library:CreateWindow(WindowInfo)
     local SidebarHighlightCallback = WindowInfo.SidebarHighlightCallback
 
     local LayoutState = {
-        IsCompact = WindowInfo.Compact or WindowInfo.IconOnlyTabs,
+        -- IconOnlyTabs does not set IsCompact; it only forces the narrow strip width via GetSidebarWidth
+        -- so IconOnlyWindow can still hide the title text independently when tabs show labels.
+        IsCompact = WindowInfo.Compact,
         MinWidth = WindowInfo.SidebarMinWidth,
         CompactWidth = WindowInfo.SidebarCompactWidth,
         MinContentWidth = WindowInfo.MinContentWidth or 260,
@@ -6042,7 +6044,10 @@ function Library:CreateWindow(WindowInfo)
     }
 
     local function GetSidebarWidth()
-        return LayoutState.IsCompact and LayoutState.CompactWidth or LayoutState.CurrentWidth
+        if LayoutState.IsCompact or WindowInfo.IconOnlyTabs then
+            return LayoutState.CompactWidth
+        end
+        return LayoutState.CurrentWidth
     end
 
     local function EnsureSidebarBounds()
@@ -6086,7 +6091,7 @@ function Library:CreateWindow(WindowInfo)
         EnsureSidebarBounds()
 
         local SidebarWidth = GetSidebarWidth()
-        local IsCompact = LayoutState.IsCompact
+        local IconStripMode = LayoutState.IsCompact or WindowInfo.IconOnlyTabs == true
 
         if LayoutRefs.DividerLine then
             LayoutRefs.DividerLine.Position = UDim2.new(0, SidebarWidth, 0, 0)
@@ -6114,13 +6119,15 @@ function Library:CreateWindow(WindowInfo)
             if WindowInfo.Icon then
                 LayoutRefs.WindowIcon.Visible = true
             else
-                LayoutRefs.WindowIcon.Visible = IsCompact or WindowInfo.IconOnlyWindow or not LayoutRefs.WindowTitle
+                LayoutRefs.WindowIcon.Visible = IconStripMode
+                    or WindowInfo.IconOnlyWindow
+                    or not LayoutRefs.WindowTitle
             end
         end
 
         if LayoutRefs.WindowTitle then
-            LayoutRefs.WindowTitle.Visible = not IsCompact and not WindowInfo.IconOnlyWindow
-            if not IsCompact and not WindowInfo.IconOnlyWindow then
+            LayoutRefs.WindowTitle.Visible = not IconStripMode and not WindowInfo.IconOnlyWindow
+            if not IconStripMode and not WindowInfo.IconOnlyWindow then
                 local MaxTextWidth =
                     math.max(0, SidebarWidth - (WindowInfo.Icon and WindowInfo.IconSize.X.Offset + 12 or 12))
                 local TextWidth =
@@ -6138,15 +6145,14 @@ function Library:CreateWindow(WindowInfo)
         end
 
         for _, Padding in ipairs(LayoutRefs.TabPadding) do
-            local IsIconOnlyTabs = WindowInfo.IconOnlyTabs == true
-            Padding.PaddingLeft = UDim.new(0, (IsCompact or IsIconOnlyTabs) and 14 or 12)
-            Padding.PaddingRight = UDim.new(0, (IsCompact or IsIconOnlyTabs) and 14 or 12)
-            Padding.PaddingTop = UDim.new(0, (IsCompact or IsIconOnlyTabs) and 7 or 11)
-            Padding.PaddingBottom = UDim.new(0, (IsCompact or IsIconOnlyTabs) and 7 or 11)
+            Padding.PaddingLeft = UDim.new(0, IconStripMode and 14 or 12)
+            Padding.PaddingRight = UDim.new(0, IconStripMode and 14 or 12)
+            Padding.PaddingTop = UDim.new(0, IconStripMode and 7 or 11)
+            Padding.PaddingBottom = UDim.new(0, IconStripMode and 7 or 11)
         end
 
         for _, LabelObject in ipairs(LayoutRefs.TabLabels) do
-            LabelObject.Visible = not IsCompact and not WindowInfo.IconOnlyTabs
+            LabelObject.Visible = not LayoutState.IsCompact and not WindowInfo.IconOnlyTabs
         end
 
         SetSidebarHighlight(LayoutState.GrabberHighlighted)
@@ -6298,17 +6304,18 @@ function Library:CreateWindow(WindowInfo)
                 Parent = TitleHolder,
             })
         end
-        WindowIcon.Visible = WindowInfo.Icon ~= nil or LayoutState.IsCompact
+        WindowIcon.Visible = WindowInfo.Icon ~= nil or LayoutState.IsCompact or WindowInfo.IconOnlyTabs
         LayoutRefs.WindowIcon = WindowIcon
 
+        local InitialIconStrip = LayoutState.IsCompact or WindowInfo.IconOnlyTabs
         WindowTitle = New("TextButton", {
             BackgroundTransparency = 1,
             Text = WindowInfo.Title,
             TextSize = 20,
-            Visible = not LayoutState.IsCompact and not WindowInfo.IconOnlyWindow,
+            Visible = not InitialIconStrip and not WindowInfo.IconOnlyWindow,
             Parent = TitleHolder,
         })
-        if not LayoutState.IsCompact and not WindowInfo.IconOnlyWindow then
+        if not InitialIconStrip and not WindowInfo.IconOnlyWindow then
             local MaxTextWidth =
                 math.max(0, InitialSidebarWidth - (WindowInfo.Icon and WindowInfo.IconSize.X.Offset + 12 or 12))
             local TextWidth = Library:GetTextBounds(WindowTitle.Text, Library.Scheme.Font, 20, MaxTextWidth)
@@ -6729,11 +6736,12 @@ function Library:CreateWindow(WindowInfo)
                 Parent = Tabs,
             })
 
+            local TabStripTight = LayoutState.IsCompact or WindowInfo.IconOnlyTabs
             local ButtonPadding = New("UIPadding", {
-                PaddingBottom = UDim.new(0, LayoutState.IsCompact and 7 or 9),
-                PaddingLeft = UDim.new(0, LayoutState.IsCompact and 14 or 10),
-                PaddingRight = UDim.new(0, LayoutState.IsCompact and 14 or 10),
-                PaddingTop = UDim.new(0, LayoutState.IsCompact and 7 or 9),
+                PaddingBottom = UDim.new(0, TabStripTight and 7 or 9),
+                PaddingLeft = UDim.new(0, TabStripTight and 14 or 10),
+                PaddingRight = UDim.new(0, TabStripTight and 14 or 10),
+                PaddingTop = UDim.new(0, TabStripTight and 7 or 9),
                 Parent = TabButton,
             })
             table.insert(LayoutRefs.TabPadding, ButtonPadding)
@@ -7484,11 +7492,12 @@ function Library:CreateWindow(WindowInfo)
                 Text = "",
                 Parent = Tabs,
             })
+            local KeyTabStripTight = LayoutState.IsCompact or WindowInfo.IconOnlyTabs
             local KeyTabPadding = New("UIPadding", {
-                PaddingBottom = UDim.new(0, LayoutState.IsCompact and 7 or 11),
-                PaddingLeft = UDim.new(0, LayoutState.IsCompact and 14 or 12),
-                PaddingRight = UDim.new(0, LayoutState.IsCompact and 14 or 12),
-                PaddingTop = UDim.new(0, LayoutState.IsCompact and 7 or 11),
+                PaddingBottom = UDim.new(0, KeyTabStripTight and 7 or 11),
+                PaddingLeft = UDim.new(0, KeyTabStripTight and 14 or 12),
+                PaddingRight = UDim.new(0, KeyTabStripTight and 14 or 12),
+                PaddingTop = UDim.new(0, KeyTabStripTight and 7 or 11),
                 Parent = TabButton,
             })
             table.insert(LayoutRefs.TabPadding, KeyTabPadding)
