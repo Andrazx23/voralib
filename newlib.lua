@@ -1112,9 +1112,14 @@ type IconModule = {
 }
 
 local FetchIcons, Icons = pcall(function()
-    return (loadstring(
-        game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
-    ) :: () -> IconModule)()
+    local lucideSrc = game:HttpGet(
+        "https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua"
+    )
+    local chunk = loadstring and loadstring(lucideSrc) or (load and load(lucideSrc))
+    if not chunk then
+        return nil
+    end
+    return chunk()
 end)
 
 function Library:GetIcon(IconName: string)
