@@ -5998,11 +5998,18 @@ function Library:CreateWindow(WindowInfo)
         or string.find(windowTitleLower, "mola hub", 1, true) ~= nil
         or string.find(windowTitleLower, "mola-hub", 1, true) ~= nil
     local isMolaHub = isMolaHubByTitle or isMolaHubByIcon
-    -- Skema mint sama untuk Vora & Mola (biru navy sebelumnya hanya dipakai di cabang Mola dan bikin Mola kelihatan "Vorahub")
-    Library.Scheme.BackgroundColor = Color3.fromRGB(15, 15, 15)
-    Library.Scheme.MainColor = Color3.fromRGB(25, 25, 25)
-    Library.Scheme.AccentColor = Color3.fromRGB(141, 242, 151)
-    Library.Scheme.OutlineColor = Color3.fromRGB(52, 95, 58)
+    -- VoraHub: accent biru Obsidian default. MolaHub: mint (deteksi judul/icon).
+    if isMolaHub then
+        Library.Scheme.BackgroundColor = Color3.fromRGB(15, 15, 15)
+        Library.Scheme.MainColor = Color3.fromRGB(25, 25, 25)
+        Library.Scheme.AccentColor = Color3.fromRGB(141, 242, 151)
+        Library.Scheme.OutlineColor = Color3.fromRGB(52, 95, 58)
+    else
+        Library.Scheme.BackgroundColor = Color3.fromRGB(15, 15, 15)
+        Library.Scheme.MainColor = Color3.fromRGB(25, 25, 25)
+        Library.Scheme.AccentColor = Color3.fromRGB(0, 133, 255)
+        Library.Scheme.OutlineColor = Color3.fromRGB(4, 84, 102)
+    end
 
     local IsDefaultSearchbarSize = WindowInfo.SearchbarSize == UDim2.fromScale(1, 1)
     local MainFrame
@@ -7877,7 +7884,7 @@ function Library:CreateWindow(WindowInfo)
     corner.Parent = toggleButton
 
     local stroke = Instance.new("UIStroke")
-    stroke.Color = Color3.fromRGB(141, 242, 151)
+    stroke.Color = isMolaHub and Color3.fromRGB(141, 242, 151) or Color3.fromRGB(0, 133, 255)
     stroke.Thickness = 2
     stroke.Parent = toggleButton
 
