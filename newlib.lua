@@ -1112,14 +1112,9 @@ type IconModule = {
 }
 
 local FetchIcons, Icons = pcall(function()
-    local lucideSrc = game:HttpGet(
-        "https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua"
-    )
-    local chunk = loadstring and loadstring(lucideSrc) or (load and load(lucideSrc))
-    if not chunk then
-        return nil
-    end
-    return chunk()
+    return (loadstring(
+        game:HttpGet("https://raw.githubusercontent.com/deividcomsono/lucide-roblox-direct/refs/heads/main/source.lua")
+    ) :: () -> IconModule)()
 end)
 
 function Library:GetIcon(IconName: string)
@@ -5955,24 +5950,6 @@ function Library:CreateWindow(WindowInfo)
         WindowInfo.IconOnlyWindow = WindowInfo.IconOnly
         WindowInfo.IconOnlyTabs = WindowInfo.IconOnly
     end
-
-    do
-        local titleLower = string.lower(tostring(WindowInfo.Title or ""))
-        if string.find(titleLower, "molahub", 1, true) then
-            Library.Scheme.BackgroundColor = Color3.fromRGB(0, 0, 0)
-            Library.Scheme.MainColor = Color3.fromRGB(12, 14, 18)
-            Library.Scheme.AccentColor = Color3.fromRGB(130, 220, 165)
-            Library.Scheme.OutlineColor = Color3.fromRGB(42, 88, 62)
-            Library.Scheme.FontColor = Color3.fromRGB(255, 255, 255)
-        elseif string.find(titleLower, "vorahub", 1, true) then
-            Library.Scheme.BackgroundColor = Color3.fromRGB(0, 0, 0)
-            Library.Scheme.MainColor = Color3.fromRGB(12, 14, 18)
-            Library.Scheme.AccentColor = Color3.fromRGB(140, 205, 255)
-            Library.Scheme.OutlineColor = Color3.fromRGB(52, 78, 112)
-            Library.Scheme.FontColor = Color3.fromRGB(255, 255, 255)
-        end
-    end
-
     local ViewportSize: Vector2 = workspace.CurrentCamera.ViewportSize
     if RunService:IsStudio() and ViewportSize.X <= 5 and ViewportSize.Y <= 5 then
         repeat
@@ -7539,7 +7516,7 @@ function Library:CreateWindow(WindowInfo)
             table.insert(LayoutRefs.TabLabels, TabLabel)
 
             if Icon then
-                TabIcon = New("ImageLabel", {@
+                TabIcon = New("ImageLabel", {
                     Image = Icon.Url,
                     ImageColor3 = Icon.Custom and "White" or "AccentColor",
                     ImageRectOffset = Icon.ImageRectOffset,
