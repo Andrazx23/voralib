@@ -5984,7 +5984,20 @@ function Library:CreateWindow(WindowInfo)
     Library.GlobalSearch = WindowInfo.GlobalSearch
 
     local windowTitleLower = string.lower(tostring(WindowInfo.Title or ""))
-    local isMolaHub = string.find(windowTitleLower, "molahub", 1, true) ~= nil
+    local iconStr = ""
+    if WindowInfo.Icon ~= nil then
+        local ic = WindowInfo.Icon
+        if typeof(ic) == "number" then
+            iconStr = tostring(ic)
+        elseif typeof(ic) == "string" then
+            iconStr = string.gsub(string.lower(ic), "%s", "")
+        end
+    end
+    local isMolaHubByIcon = string.find(iconStr, "77026411691065", 1, true) ~= nil
+    local isMolaHubByTitle = string.find(windowTitleLower, "molahub", 1, true) ~= nil
+        or string.find(windowTitleLower, "mola hub", 1, true) ~= nil
+        or string.find(windowTitleLower, "mola-hub", 1, true) ~= nil
+    local isMolaHub = isMolaHubByTitle or isMolaHubByIcon
     if isMolaHub then
         Library.Scheme.BackgroundColor = Color3.fromRGB(10, 12, 25)
         Library.Scheme.MainColor = Color3.fromRGB(25, 30, 50)
