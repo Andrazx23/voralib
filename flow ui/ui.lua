@@ -844,10 +844,10 @@ function vora_ui.new(config)
     self._refreshJobs = {}
     self._notificationTimestamps = {}
     self._uiVisualSettings = {
-        Blur = false,
+        Blur = true,
         Snow = false,
         BackgroundEffects = false,
-        TextGradient = false,
+        TextGradient = true,
         ESPSelfPreview = false,
         HideName = false
     }
@@ -4325,9 +4325,6 @@ function vora_ui:BuildMainFrame()
     local espPreviewToggleRef = createSettingsToggle("ESP Preview", self._uiVisualSettings.ESPSelfPreview, function(enabled)
         self:SetESPPreview(enabled)
     end)
-    local hideNameToggleRef = createSettingsToggle("Hide Name", self._uiVisualSettings.HideName, function(enabled)
-        self:_SetNameHidden(enabled)
-    end)
     local autoSaveToggleRef = nil
     if self.config.ShowAutoSaveToggle ~= false then
         autoSaveToggleRef = createSettingsToggle("Auto Save Config", self._autoConfigEnabled, function(enabled)
@@ -4342,7 +4339,7 @@ function vora_ui:BuildMainFrame()
         end)
     end
 
-    self.settings_toggle_refs = {blurToggleRef, overlayToggleRef, bgFxToggleRef, gradientToggleRef, espPreviewToggleRef, hideNameToggleRef}
+    self.settings_toggle_refs = {blurToggleRef, overlayToggleRef, bgFxToggleRef, gradientToggleRef, espPreviewToggleRef}
     if autoSaveToggleRef then
         table.insert(self.settings_toggle_refs, autoSaveToggleRef)
     end
