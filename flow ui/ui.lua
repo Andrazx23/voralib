@@ -14,7 +14,6 @@ local lighting          = safe_clone(game:GetService("Lighting"))
 
 --#endregion═════════════════════════════════════════════════════════════════════
 
-
 --#region ══╗ Icons System ╔═════════════════════════════════════════════════════
 
 local icons_module = nil
@@ -22,13 +21,16 @@ local icons_cache = {}
 
 local function load_icons_module()
     if icons_module then return icons_module end
-    local ok, result = pcall(function()
-        return loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua"))()
+    -- Lazy load icons in background for faster UI init
+    task.spawn(function()
+        local ok, result = pcall(function()
+            return loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua"))()
+        end)
+        if ok and result then
+            icons_module = result
+            pcall(function() icons_module.SetIconsType("lucide") end)
+        end
     end)
-    if ok and result then
-        icons_module = result
-        pcall(function() icons_module.SetIconsType("lucide") end)
-    end
     return icons_module
 end
 
@@ -69,9 +71,20 @@ local default_icons = {
     dropdown_arrow  = "rbxassetid://111626678408582",
 }
 
--- Custom Logo Image
-local vora_img      = writefile("vora_logo.png", game:HttpGet("https://github.com/Andrazx23/voralib/blob/main/VoraHub.G7_20260405143108.png?raw=true"))
-local vora_logo     = getcustomasset("vora_logo.png")
+-- Custom Logo Image (lazy loaded for faster init)
+local vora_logo = "rbxassetid://94219370057308" -- fallback icon
+local vora_logo_loaded = false
+local function get_vora_logo()
+    if vora_logo_loaded then return vora_logo end
+    task.spawn(function()
+        pcall(function()
+            writefile("vora_logo.png", game:HttpGet("https://github.com/Andrazx23/voralib/blob/main/VoraHub.G7_20260405143108.png?raw=true"))
+            vora_logo = getcustomasset("vora_logo.png")
+            vora_logo_loaded = true
+        end)
+    end)
+    return vora_logo
+end
 
 --#endregion═════════════════════════════════════════════════════════════════════
 
@@ -808,6 +821,10 @@ function vora_ui.new(config)
     if autoConfigSetting == nil then
         autoConfigSetting = false
     end
+    -- Disable auto config by default for faster UI loading
+    if self.config.DisableAutoLoad == true then
+        autoConfigSetting = false
+    end
     self._autoConfigEnabled = autoConfigSetting == true
     self._autoConfigLoadAttempted = not self._autoConfigEnabled
     self._autoConfigAccumulator = 0
@@ -848,8 +865,9 @@ function vora_ui.new(config)
         Snow = false,
         BackgroundEffects = false,
         TextGradient = false,
-        ESPSelfPreview = false,
-        HideName = false
+        ESPSelfPreview = false,  -- Keep disabled for fast loading
+        HideName = true,         -- Hide name by default
+        FastLoad = true          -- Skip expensive init operations
     }
     self._fontPresets = {
         {Name = "Gotham", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/GothamSSm.json", Weight = Enum.FontWeight.SemiBold},
@@ -1158,6 +1176,7 @@ function vora_ui:_SpawnSnowflake()
         swirlAmount = math.random(2, 10) * scale_factor,
         driftSpeed = math.random(5, 15) / 10,
         twinkleSpeed = math.random(6, 15) / 10,
+        pulseAmount = (math.random(8, 24) / 100),
         baseTransparency = flake.ImageTransparency,
         phase = math.random() * math.pi * 2,
         spin = math.random(-14, 14),
@@ -1428,7 +1447,7 @@ function vora_ui:SetFontPreset(index)
     local targetFontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
     if preset.Family then
         local okFont, generatedFont = pcall(function()
-            return Font.new(preset.Family, preset.Weight or Enum.FontWeight.SemiBold, Enum.FontStyle.Normal)
+            return Font.new(preset.Family, preset.Weight or Enum.FontWeight.SemiBold, preset.Style or Enum.FontStyle.Normal)
         end)
         if okFont then
             targetFontFace = generatedFont
@@ -1753,9 +1772,10 @@ end
 function vora_ui:_CreateESPPreviewFallbackCharacter()
     local fallbackModel = nil
     local created = false
-    local previewUserId, previewImageUrl = resolve_avatar_3d(local_player.UserId)
+    -- Skip expensive avatar 3D resolve for faster loading
+    local previewUserId = tonumber(local_player.UserId) or 1
     self._espPreviewAvatar3DUserId = previewUserId
-    self._espPreviewAvatar3DImageUrl = previewImageUrl
+    self._espPreviewAvatar3DImageUrl = nil
 
     local okCreate = pcall(function()
         fallbackModel = players:CreateHumanoidModelFromUserId(previewUserId)
