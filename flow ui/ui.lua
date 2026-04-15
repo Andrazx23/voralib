@@ -6818,6 +6818,7 @@ function vora_ui:AddSection(config)
                 labelConfig = labelConfig or {}
                 labelConfig.Text = labelConfig.Text or "Label"
                 labelConfig.Wrap = labelConfig.Wrap == true
+                labelConfig.RichText = labelConfig.RichText ~= false
                 addSearchTerm(labelConfig.Text)
                 local yPosition = groupObj.element_y
                 local labelMaxWidth = 238 * scale_factor
@@ -6836,6 +6837,7 @@ function vora_ui:AddSection(config)
                     Size = UDim2.new(0, labelMaxWidth, 0, labelHeight), TextXAlignment = Enum.TextXAlignment.Left,
                     TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = labelConfig.Wrap,
                     TextTruncate = labelConfig.Wrap and Enum.TextTruncate.None or Enum.TextTruncate.AtEnd,
+                    RichText = labelConfig.RichText,
                     ClipsDescendants = true,
                     Parent = groupObj.mainFrame
                 })
