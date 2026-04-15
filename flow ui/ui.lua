@@ -6841,9 +6841,19 @@ function vora_ui:AddSection(config)
                     ClipsDescendants = true,
                     Parent = groupObj.mainFrame
                 })
+                
+                local labelObj = {}
+                labelObj.Instance = labelText
+                function labelObj:SetText(text)
+                    labelText.Text = tostring(text)
+                end
+                function labelObj:SetName(text)
+                    labelText.Text = tostring(text)
+                end
+                
                 groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
                 update_group_size()
-                return labelText
+                return labelObj
             end
             
             function groupObj:AddTextInput(textInputConfig)
