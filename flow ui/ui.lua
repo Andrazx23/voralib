@@ -3640,29 +3640,51 @@ function vora_ui:BuildToggleButton()
         end)
     end)
 
-    local dragging_t, drag_start_t, start_pos_t = false
+    local dragging_t = false
+    local drag_start_t = nil
+    local start_pos_t = nil
+    local is_actually_dragging = false
+    local drag_threshold = 5
+
     local function update_drag_t(input)
         if not drag_start_t or not start_pos_t then return end
         local delta = input.Position - drag_start_t
-        self.toggle_frame.Position = UDim2.new(
-            start_pos_t.X.Scale, start_pos_t.X.Offset + delta.X,
-            start_pos_t.Y.Scale, start_pos_t.Y.Offset + delta.Y
-        )
+        
+        if delta.Magnitude > drag_threshold then
+            is_actually_dragging = true
+        end
+
+        if is_actually_dragging then
+            self.toggle_frame.Position = UDim2.new(
+                start_pos_t.X.Scale, start_pos_t.X.Offset + delta.X,
+                start_pos_t.Y.Scale, start_pos_t.Y.Offset + delta.Y
+            )
+        end
     end
+
     toggle_btn.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging_t = true
+            is_actually_dragging = false
             drag_start_t = input.Position
             start_pos_t = self.toggle_frame.Position
+            
             local conn
             conn = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging_t = false
+                    
+                    -- Jika kamu punya sistem custom click, kamu bisa cek di sini
+                    -- if not is_actually_dragging then 
+                    --     print("Ini murni klik, bukan drag!") 
+                    -- end
+                    
                     conn:Disconnect()
                 end
             end)
         end
     end)
+
     self:_TrackConnection(input_service.InputChanged:Connect(function(input)
         if dragging_t and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update_drag_t(input)
@@ -7504,182 +7526,6 @@ function vora_ui:Destroy()
     if rawget(sharedEnv, RUNTIME_INSTANCE_KEY) == self then
         rawset(sharedEnv, RUNTIME_INSTANCE_KEY, nil)
     end
-end
-
-function vora_ui.Demo()
-    local lib = vora_ui.new({
-        Name = "VoraHub Demo",
-        AccentColor = Color3.fromRGB(0, 133, 255),
-        AutoConfig = false
-    })
-
-    local main_section = lib:AddSection({Name = "Main", Icon = "sword"})
-
-    local combat_tab = main_section:AddTab({
-        Name = "Combat",
-        Description = "Combat settings",
-        Icon = "crosshair"
-    })
-
-    local aimbot_group = combat_tab:AddGroup({Name = "Aimbot", Side = "Left", Icon = "target"})
-
-    aimbot_group:AddToggle({
-        Name = "Enabled",
-        Default = false,
-        Callback = function(val) print("[Demo] Aimbot:", val) end
-    })
-
-    aimbot_group:AddSlider({
-        Name = "FOV",
-        Min = 10,
-        Max = 800,
-        Default = 120,
-        Increment = 5,
-        Callback = function(val) print("[Demo] FOV:", val) end
-    })
-
-    aimbot_group:AddDropdown({
-        Name = "Target Part",
-        Options = {"Head", "HumanoidRootPart", "Torso"},
-        Default = "Head",
-        Callback = function(val) print("[Demo] Part:", val) end
-    })
-
-    aimbot_group:AddKeybindToggle({
-        Name = "Toggle Key",
-        Default = Enum.KeyCode.E,
-        ToggleDefault = false,
-        Callback = function(val) print("[Demo] Keybind toggle:", val) end
-    })
-
-    local visuals_group = combat_tab:AddGroup({Name = "Visuals", Side = "Right", Icon = "eye"})
-
-    visuals_group:AddToggle({
-        Name = "Show FOV Circle",
-        Default = true,
-        Callback = function(val) print("[Demo] FOV Circle:", val) end
-    })
-
-    visuals_group:AddColorPicker({
-        Name = "FOV Color",
-        Default = Color3.fromRGB(255, 0, 0),
-        Callback = function(val) print("[Demo] Color:", val) end
-    })
-
-    visuals_group:AddLabel({Name = "Visuals are client-side only."})
-
-    local util_tab = main_section:AddTab({
-        Name = "Utility",
-        Description = "Utility features",
-        Icon = "wrench"
-    })
-
-    local movement_group = util_tab:AddGroup({Name = "Movement", Side = "Left", Icon = "move"})
-
-    movement_group:AddToggle({
-        Name = "Speed Hack",
-        Default = false,
-        Callback = function(val) print("[Demo] Speed:", val) end
-    })
-
-    movement_group:AddSlider({
-        Name = "Walk Speed",
-        Min = 16,
-        Max = 200,
-        Default = 16,
-        Increment = 1,
-        Callback = function(val) print("[Demo] WalkSpeed:", val) end
-    })
-
-    movement_group:AddSlider({
-        Name = "Jump Power",
-        Min = 50,
-        Max = 500,
-        Default = 50,
-        Increment = 5,
-        Callback = function(val) print("[Demo] JumpPower:", val) end
-    })
-
-    movement_group:AddKeybind({
-        Name = "Fly Key",
-        Default = Enum.KeyCode.F,
-        Callback = function() print("[Demo] Fly pressed") end
-    })
-
-    local misc_group = util_tab:AddGroup({Name = "Misc", Side = "Right", Icon = "box"})
-
-    misc_group:AddButton({
-        Name = "Rejoin Server",
-        Callback = function() print("[Demo] Rejoin clicked") end
-    })
-
-    misc_group:AddButton({
-        Name = "Copy Game Link",
-        Callback = function() print("[Demo] Copy link clicked") end
-    })
-
-    misc_group:AddTextInput({
-        Name = "Webhook URL",
-        Default = "",
-        PlaceholderText = "https://...",
-        Callback = function(val) print("[Demo] Webhook:", val) end
-    })
-
-    misc_group:AddDropdown({
-        Name = "Theme",
-        Options = {"Dark", "Midnight", "Ocean", "Sunset"},
-        Default = "Dark",
-        Callback = function(val) print("[Demo] Theme:", val) end
-    })
-
-    misc_group:AddMultiDropdown({
-        Name = "Notifications",
-        Options = {"Kills", "Deaths", "Chat", "Joins", "Teleports"},
-        Default = {"Kills", "Chat"},
-        Callback = function(val) print("[Demo] Notifs:", val) end
-    })
-
-    misc_group:AddDivider()
-
-    misc_group:AddLabel({Name = "v1.0.0 - VoraHub Demo"})
-
-    local settings_section = lib:AddSection({Name = "Config", Icon = "settings"})
-
-    local cfg_tab = settings_section:AddTab({
-        Name = "Settings",
-        Description = "Configuration",
-        Icon = "save"
-    })
-
-    local cfg_group = cfg_tab:AddGroup({Name = "Config", Side = "Left", Icon = "hard-drive"})
-
-    cfg_group:AddButton({
-        Name = "Save Config",
-        Callback = function()
-            pcall(function() lib:SaveConfig("demo_config") end)
-            lib:Notify({Title = "Config", Description = "Saved!", Duration = 3})
-        end
-    })
-
-    cfg_group:AddButton({
-        Name = "Load Config",
-        Callback = function()
-            pcall(function() lib:LoadConfig("demo_config") end)
-            lib:Notify({Title = "Config", Description = "Loaded!", Duration = 3})
-        end
-    })
-
-    local info_group = cfg_tab:AddGroup({Name = "Info", Side = "Right", Icon = "info"})
-    info_group:AddLabel({Name = "Game: " .. tostring(game.PlaceId)})
-    info_group:AddLabel({Name = "Player: " .. tostring(local_player.Name)})
-
-    lib:Notify({
-        Title = "VoraHub Demo",
-        Description = "UI loaded. Press RightCtrl to toggle.",
-        Duration = 5
-    })
-
-    return lib
 end
 
 --#endregion═════════════════════════════════════════════════════════════════════
