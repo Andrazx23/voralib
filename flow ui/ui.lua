@@ -5153,9 +5153,14 @@ function vora_ui:AddSection(config)
                 relayout_groups()
             end
 
-            function groupObj:AddToggle(toggleConfig)
+            function groupObj:AddToggle(toggleConfig, config)
+                -- Support old API: AddToggle(name, config)
+                if type(toggleConfig) == "string" then
+                    toggleConfig = {Name = toggleConfig, Flag = toggleConfig, Text = config and config.Text or toggleConfig, Default = config and config.Default or false}
+                end
+                
                 toggleConfig = toggleConfig or {}
-                toggleConfig.Name = toggleConfig.Name or "Toggle"
+                toggleConfig.Name = toggleConfig.Name or toggleConfig.Text or "Toggle"
                 toggleConfig.Default = toggleConfig.Default or false
                 toggleConfig.Callback = toggleConfig.Callback or function() end
                 toggleConfig.Flag = toggleConfig.Flag or createAutoFlag(toggleConfig.Name)
@@ -6047,10 +6052,15 @@ function vora_ui:AddSection(config)
                 return keybindToggleObj
             end
 
-            function groupObj:AddDropdown(dropdownConfig)
+            function groupObj:AddDropdown(dropdownConfig, config)
+                -- Support old API: AddDropdown(name, config)
+                if type(dropdownConfig) == "string" then
+                    dropdownConfig = {Name = dropdownConfig, Flag = dropdownConfig, Text = config and config.Text or dropdownConfig, Values = config and config.Values or {}}
+                end
+                
                 dropdownConfig = dropdownConfig or {}
-                dropdownConfig.Name = dropdownConfig.Name or "Dropdown"
-                dropdownConfig.Options = dropdownConfig.Options or {"Option 1", "Option 2", "Option 3"}
+                dropdownConfig.Name = dropdownConfig.Name or dropdownConfig.Text or "Dropdown"
+                dropdownConfig.Options = dropdownConfig.Options or dropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 dropdownConfig.OptionsProvider = dropdownConfig.OptionsProvider or dropdownConfig.GetOptions
                 local dropdownHasProvider = type(dropdownConfig.OptionsProvider) == "function"
                 if dropdownConfig.AutoRefresh == nil then
