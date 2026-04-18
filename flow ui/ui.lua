@@ -5230,9 +5230,14 @@ function vora_ui:AddSection(config)
                 return toggleObj
             end
 
-            function groupObj:AddSlider(sliderConfig)
+            function groupObj:AddSlider(sliderConfig, config)
+                -- Support old API: AddSlider(name, config)
+                if type(sliderConfig) == "string" then
+                    sliderConfig = {Name = sliderConfig, Flag = sliderConfig, Text = config and config.Text or sliderConfig, Min = config and config.Min, Max = config and config.Max, Default = config and config.Default, Increment = config and config.Rounding, Callback = config and config.Callback}
+                end
+
                 sliderConfig = sliderConfig or {}
-                sliderConfig.Name = sliderConfig.Name or "Slider"
+                sliderConfig.Name = sliderConfig.Name or sliderConfig.Text or "Slider"
                 sliderConfig.Min = tonumber(sliderConfig.Min) or 0
                 sliderConfig.Max = tonumber(sliderConfig.Max) or 100
                 if sliderConfig.Max < sliderConfig.Min then
@@ -6887,9 +6892,14 @@ function vora_ui:AddSection(config)
                 return labelObj
             end
             
-            function groupObj:AddTextInput(textInputConfig)
+            function groupObj:AddTextInput(textInputConfig, config)
+                -- Support old API: AddTextInput(name, config)
+                if type(textInputConfig) == "string" then
+                    textInputConfig = {Name = textInputConfig, Flag = textInputConfig, Text = config and config.Text or textInputConfig, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
+                end
+
                 textInputConfig = textInputConfig or {}
-                textInputConfig.Name = textInputConfig.Name or "Input"
+                textInputConfig.Name = textInputConfig.Name or textInputConfig.Text or "Input"
                 textInputConfig.Placeholder = textInputConfig.Placeholder or "Enter text..."
                 textInputConfig.Default = tostring(textInputConfig.Default or "")
                 textInputConfig.Callback = textInputConfig.Callback or function() end
