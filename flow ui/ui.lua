@@ -5230,14 +5230,9 @@ function vora_ui:AddSection(config)
                 return toggleObj
             end
 
-            function groupObj:AddSlider(sliderConfig, config)
-                -- Support old API: AddSlider(name, config)
-                if type(sliderConfig) == "string" then
-                    sliderConfig = {Name = sliderConfig, Flag = sliderConfig, Text = config and config.Text or sliderConfig, Min = config and config.Min, Max = config and config.Max, Default = config and config.Default, Increment = config and config.Rounding, Callback = config and config.Callback}
-                end
-
+            function groupObj:AddSlider(sliderConfig)
                 sliderConfig = sliderConfig or {}
-                sliderConfig.Name = sliderConfig.Name or sliderConfig.Text or "Slider"
+                sliderConfig.Name = sliderConfig.Name or "Slider"
                 sliderConfig.Min = tonumber(sliderConfig.Min) or 0
                 sliderConfig.Max = tonumber(sliderConfig.Max) or 100
                 if sliderConfig.Max < sliderConfig.Min then
