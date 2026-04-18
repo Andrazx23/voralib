@@ -81,6 +81,11 @@ local vora_logo     = getcustomasset("vora_logo.png")
 local vora_ui = {}
 vora_ui.__index = vora_ui
 
+local Toggles = {}
+local Options = {}
+_G.Toggles = Toggles
+_G.Options = Options
+
 local local_player      = players.LocalPlayer
 local player_mouse      = local_player:GetMouse()
 
@@ -5154,8 +5159,10 @@ function vora_ui:AddSection(config)
             end
 
             function groupObj:AddToggle(toggleConfig, config)
-                -- Support old API: AddToggle(name, config)
+                -- Support old API: AddToggle(Idx, config) - match Library.lua pattern
+                local Idx = nil
                 if type(toggleConfig) == "string" then
+                    Idx = toggleConfig
                     toggleConfig = {Name = toggleConfig, Flag = toggleConfig, Text = config and config.Text or toggleConfig, Default = config and config.Default or false}
                 end
                 
@@ -5195,8 +5202,11 @@ function vora_ui:AddSection(config)
                 
                 local toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.switchFrame})
                 
+                toggleObj.Changed = toggleConfig.Callback
+                
                 function toggleObj:Set(value, silent)
                     toggleObj.value = value == true
+                    toggleObj.Value = toggleObj.value
                     if toggleObj.value then
                         tween_to(toggleObj.switchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
                         tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
@@ -5204,17 +5214,16 @@ function vora_ui:AddSection(config)
                         tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                         tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                     end
-                    if not silent then
-                        toggleConfig.Callback(toggleObj.value)
+                    if not silent and toggleObj.Changed then
+                        toggleObj.Changed(toggleObj.value)
                     end
                 end
-
                 function toggleObj:Get()
                     return toggleObj.value
                 end
                 
-                function toggleObj:OnChanged(callback)
-                    toggleConfig.Callback = callback or function() end
+                function toggleObj:OnChanged(Func, callback)
+                    toggleObj.Changed = Func or callback
                 end
                 
                 toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
@@ -5224,15 +5233,26 @@ function vora_ui:AddSection(config)
                     toggleObj:Set(value == true, true)
                 end)
                 
+                -- Store in global Toggles table
+                Toggles[Idx or toggleConfig.Name] = toggleObj
+                toggleObj.Value = toggleObj.value
+                
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, toggleObj)
                 return toggleObj
             end
 
-            function groupObj:AddSlider(sliderConfig)
+            function groupObj:AddSlider(sliderConfig, config)
+                -- Support old API: AddSlider(Idx, config) - match Library.lua pattern
+                local Idx = nil
+                if type(sliderConfig) == "string" then
+                    Idx = sliderConfig
+                    sliderConfig = {Name = sliderConfig, Flag = sliderConfig, Text = config and config.Text or sliderConfig, Min = config and config.Min, Max = config and config.Max, Default = config and config.Default, Increment = config and config.Rounding, Callback = config and config.Callback}
+                end
+
                 sliderConfig = sliderConfig or {}
-                sliderConfig.Name = sliderConfig.Name or "Slider"
+                sliderConfig.Name = sliderConfig.Name or sliderConfig.Text or "Slider"
                 sliderConfig.Min = tonumber(sliderConfig.Min) or 0
                 sliderConfig.Max = tonumber(sliderConfig.Max) or 100
                 if sliderConfig.Max < sliderConfig.Min then
@@ -5354,21 +5374,23 @@ function vora_ui:AddSection(config)
                     sliderObj.valueLabelText.Text = formatDisplayValue(sliderObj.value)
                 end
 
+                sliderObj.Changed = sliderConfig.Callback
+                
                 function sliderObj:Set(value, instant, silent)
                     value = normalize_slider_value(value, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
                     sliderObj.value = value
+                    sliderObj.Value = sliderObj.value
                     updateSliderVisuals(instant ~= true)
-                    if not silent then
-                        sliderConfig.Callback(value)
+                    if not silent and sliderObj.Changed then
+                        sliderObj.Changed(value)
                     end
                 end
-
                 function sliderObj:Get()
                     return sliderObj.value
                 end
                 
-                function sliderObj:OnChanged(callback)
-                    sliderConfig.Callback = callback or function() end
+                function sliderObj:OnChanged(Func, callback)
+                    sliderObj.Changed = Func or callback
                 end
                 
                 local isDraggingSlider = false
@@ -5383,8 +5405,8 @@ function vora_ui:AddSection(config)
                 end
                 sliderClickButton.InputBegan:Connect(function(input)
                     local isMouse = input.UserInputType == Enum.UserInputType.MouseButton1
-                    local isTouch = input.UserInputType == Enum.UserInputType.Touch
-                    if not isMouse and not isTouch then
+                        or input.UserInputType == Enum.UserInputType.Touch
+                    if not isMouse then
                         return
                     end
                     isDraggingSlider = true
@@ -5409,6 +5431,11 @@ function vora_ui:AddSection(config)
                 end, function(value)
                     sliderObj:Set(tonumber(value) or sliderConfig.Min, true, true)
                 end)
+                
+                -- Store in global Options table
+                Options[Idx or sliderConfig.Name] = sliderObj
+                sliderObj.Value = sliderObj.value
+                
                 groupObj.element_y = groupObj.element_y + 44 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, sliderObj)
@@ -5546,213 +5573,12 @@ function vora_ui:AddSection(config)
                 })
                 
                 local keybindClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Active = true, Parent = keybindObj.button_frame})
-                
-                local modeMenuWidth = 120 * scale_factor
-                local modeMenuHeight = 78 * scale_factor
-                local modeMenuPositionConn = nil
-                local modeMenuOutsideConn = nil
-                keybindObj.isModeMenuOpen = false
-                
-                keybindObj.modeMenuFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(16, 16, 16),
-                    Size = UDim2.new(0, modeMenuWidth, 0, 0),
-                    ClipsDescendants = true,
-                    Visible = false,
-                    ZIndex = 9999,
-                    Parent = groupObj.Library.dropdown_holder
-                })
-                create("UICorner", {CornerRadius = UDim.new(0, 7), Parent = keybindObj.modeMenuFrame})
-                create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = keybindObj.modeMenuFrame})
-                
-                create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    Text = "Keybind Mode",
-                    TextColor3 = Color3.new(1, 1, 1),
-                    BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 8, 0, 5 * scale_factor),
-                    Size = UDim2.new(1, -16, 0, 16 * scale_factor),
-                    TextSize = 12 * scale_factor,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 10000,
-                    Parent = keybindObj.modeMenuFrame
-                })
-                
-                local toggleModeFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(28, 28, 28),
-                    Position = UDim2.new(0, 8, 0, 26 * scale_factor),
-                    Size = UDim2.new(1, -16, 0, 20 * scale_factor),
-                    ZIndex = 10000,
-                    Parent = keybindObj.modeMenuFrame
-                })
-                create("UICorner", {CornerRadius = UDim.new(0, 5), Parent = toggleModeFrame})
-                
-                local toggleModeLabel = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    Text = "Toggle",
-                    TextColor3 = Color3.fromRGB(124, 124, 124),
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, 0),
-                    TextSize = 12 * scale_factor,
-                    ZIndex = 10001,
-                    Parent = toggleModeFrame
-                })
-                
-                local holdModeFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(28, 28, 28),
-                    Position = UDim2.new(0, 8, 0, 50 * scale_factor),
-                    Size = UDim2.new(1, -16, 0, 20 * scale_factor),
-                    ZIndex = 10000,
-                    Parent = keybindObj.modeMenuFrame
-                })
-                create("UICorner", {CornerRadius = UDim.new(0, 5), Parent = holdModeFrame})
-                
-                local holdModeLabel = create("TextLabel", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    Text = "Hold",
-                    TextColor3 = Color3.fromRGB(124, 124, 124),
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, 0),
-                    TextSize = 12 * scale_factor,
-                    ZIndex = 10001,
-                    Parent = holdModeFrame
-                })
-                
-                local toggleModeClickButton = create("TextButton", {
-                    Text = "",
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, 0),
-                    ZIndex = 10002,
-                    Parent = toggleModeFrame
-                })
-                
-                local holdModeClickButton = create("TextButton", {
-                    Text = "",
-                    BackgroundTransparency = 1,
-                    Size = UDim2.new(1, 0, 1, 0),
-                    ZIndex = 10002,
-                    Parent = holdModeFrame
-                })
-                
+
                 local function updateKeybindSizeYay(text)
                     local newWidth = math.max(48 * scale_factor, measure_text_width(text, 12 * scale_factor) + 30 * scale_factor)
                     tween_to(keybindObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 22 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
                 end
-                
-                local function updateModeVisuals()
-                    local selectedBg = groupObj.Library.config.AccentColor:Lerp(Color3.fromRGB(16, 16, 16), 0.45)
-                    local idleBg = Color3.fromRGB(28, 28, 28)
-                    local selectedText = Color3.new(1, 1, 1)
-                    local idleText = Color3.fromRGB(124, 124, 124)
-                    local isToggleSelected = keybindObj.mode == "Toggle"
-                    
-                    tween_to(toggleModeFrame, {BackgroundColor3 = isToggleSelected and selectedBg or idleBg}, 0.12)
-                    tween_to(toggleModeLabel, {TextColor3 = isToggleSelected and selectedText or idleText}, 0.12)
-                    tween_to(holdModeFrame, {BackgroundColor3 = isToggleSelected and idleBg or selectedBg}, 0.12)
-                    tween_to(holdModeLabel, {TextColor3 = isToggleSelected and idleText or selectedText}, 0.12)
-                end
-                
-                local function updateModeMenuPositionYay()
-                    local buttonAbsPos = keybindObj.button_frame.AbsolutePosition
-                    local buttonAbsSize = keybindObj.button_frame.AbsoluteSize
-                    keybindObj.modeMenuFrame.Position = UDim2.new(0, buttonAbsPos.X + buttonAbsSize.X - modeMenuWidth, 0, buttonAbsPos.Y + buttonAbsSize.Y + 5)
-                end
-                
-                local function closeModeMenu(isInstant)
-                    keybindObj.isModeMenuOpen = false
-                    if modeMenuPositionConn then
-                        modeMenuPositionConn()
-                        modeMenuPositionConn = nil
-                    end
-                    if modeMenuOutsideConn then
-                        modeMenuOutsideConn:Disconnect()
-                        modeMenuOutsideConn = nil
-                    end
-                    if isInstant then
-                        keybindObj.modeMenuFrame.Size = UDim2.new(0, modeMenuWidth, 0, 0)
-                        keybindObj.modeMenuFrame.Visible = false
-                        return
-                    end
-                    tween_to(keybindObj.modeMenuFrame, {Size = UDim2.new(0, modeMenuWidth, 0, 0)}, 0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
-                    task.delay(0.18, function()
-                        if keybindObj.modeMenuFrame and keybindObj.modeMenuFrame.Parent and not keybindObj.isModeMenuOpen then
-                            keybindObj.modeMenuFrame.Visible = false
-                        end
-                    end)
-                end
-                
-                local function openModeMenu()
-                    if keybindObj.isListening then return end
-                    keybindObj.isModeMenuOpen = true
-                    updateModeVisuals()
-                    updateModeMenuPositionYay()
-                    keybindObj.modeMenuFrame.Visible = true
-                    tween_to(keybindObj.modeMenuFrame, {Size = UDim2.new(0, modeMenuWidth, 0, modeMenuHeight)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
-                    
-                    if modeMenuPositionConn then modeMenuPositionConn() end
-                    modeMenuPositionConn = start_position_tracker(groupObj.Library, keybindObj.button_frame, function()
-                        if keybindObj.isModeMenuOpen then
-                            updateModeMenuPositionYay()
-                        end
-                    end)
-                    
-                    if modeMenuOutsideConn then modeMenuOutsideConn:Disconnect() end
-                    modeMenuOutsideConn = groupObj.Library:_TrackConnection(input_service.InputBegan:Connect(function(input)
-                        if not keybindObj.isModeMenuOpen then return end
-                        local isPress = input.UserInputType == Enum.UserInputType.MouseButton1
-                            or input.UserInputType == Enum.UserInputType.MouseButton2
-                            or input.UserInputType == Enum.UserInputType.Touch
-                        if not isPress then return end
-                        
-                        local mousePos = input.Position
-                        local menuPos = keybindObj.modeMenuFrame.AbsolutePosition
-                        local menuSize = keybindObj.modeMenuFrame.AbsoluteSize
-                        local buttonPos = keybindObj.button_frame.AbsolutePosition
-                        local buttonSize = keybindObj.button_frame.AbsoluteSize
-                        
-                        local insideMenu = mousePos.X >= menuPos.X and mousePos.X <= (menuPos.X + menuSize.X)
-                            and mousePos.Y >= menuPos.Y and mousePos.Y <= (menuPos.Y + menuSize.Y)
-                        local insideButton = mousePos.X >= buttonPos.X and mousePos.X <= (buttonPos.X + buttonSize.X)
-                            and mousePos.Y >= buttonPos.Y and mousePos.Y <= (buttonPos.Y + buttonSize.Y)
-                        
-                        if not insideMenu and not insideButton then
-                            closeModeMenu(false)
-                        end
-                    end))
-                end
-                
-                local function toggleModeMenu()
-                    if keybindObj.isModeMenuOpen then
-                        closeModeMenu(false)
-                    else
-                        openModeMenu()
-                    end
-                end
-                
-                local function setMode(modeValue, silent)
-                    local newMode = normalizeMode(modeValue)
-                    if newMode == keybindObj.mode then
-                        updateModeVisuals()
-                        return
-                    end
-                    if keybindObj.holdActive then
-                        keybindObj.holdActive = false
-                        keybindConfig.Callback(false)
-                    end
-                    keybindObj.mode = newMode
-                    updateModeVisuals()
-                    if not silent then
-                        keybindConfig.ModeChangedCallback(newMode)
-                    end
-                    if not silent then
-                        groupObj.Library:Notify({
-                            Title = keybindConfig.Name .. " mode updated",
-                            Description = "Now using " .. newMode .. " input",
-                            Duration = 2.2,
-                            Icon = "rbxassetid://6031075938"
-                        })
-                    end
-                end
-                
+
                 function keybindObj:Set(key, silent)
                     if keybindObj.holdActive then
                         keybindObj.holdActive = false
@@ -5772,7 +5598,18 @@ function vora_ui:AddSection(config)
                 end
                 
                 function keybindObj:SetMode(modeValue, silent)
-                    setMode(modeValue, silent)
+                    local newMode = normalizeMode(modeValue)
+                    if newMode == keybindObj.mode then
+                        return
+                    end
+                    if keybindObj.holdActive then
+                        keybindObj.holdActive = false
+                        keybindConfig.Callback(false)
+                    end
+                    keybindObj.mode = newMode
+                    if not silent then
+                        keybindConfig.ModeChangedCallback(newMode)
+                    end
                 end
                 
                 function keybindObj:GetMode()
@@ -5785,57 +5622,20 @@ function vora_ui:AddSection(config)
                         keybindObj.holdActive = false
                         keybindConfig.Callback(false)
                     end
-                    closeModeMenu(true)
                 end
                 
                 keybindClickButton.MouseButton1Click:Connect(function()
-                    closeModeMenu(true)
                     keybindObj.isListening = true
                     keybindObj.keyLabelText.Text = "..."
                     updateKeybindSizeYay("...")
                     tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(48, 48, 48)}, 0.2)
                 end)
                 
-                local modeMenuToggleDebounceAt = 0
-                local function toggleModeMenuFromRightClick()
-                    if keybindObj.isListening then
-                        return
-                    end
-                    local now = os.clock()
-                    if now - modeMenuToggleDebounceAt < 0.12 then
-                        return
-                    end
-                    modeMenuToggleDebounceAt = now
-                    toggleModeMenu()
-                end
-                
-                keybindClickButton.MouseButton2Click:Connect(toggleModeMenuFromRightClick)
-                keybindClickButton.InputBegan:Connect(function(input)
-                    if input.UserInputType ~= Enum.UserInputType.MouseButton2 then
-                        return
-                    end
-                    toggleModeMenuFromRightClick()
-                end)
-                
-                toggleModeClickButton.MouseButton1Click:Connect(function()
-                    setMode("Toggle", false)
-                    closeModeMenu(false)
-                end)
-                
-                holdModeClickButton.MouseButton1Click:Connect(function()
-                    setMode("Hold", false)
-                    closeModeMenu(false)
-                end)
-                
                 groupObj.Library:_TrackConnection(input_service.InputBegan:Connect(function(input, gameProcessed)
                     if keybindObj.isListening then
                         if input.UserInputType == Enum.UserInputType.Keyboard then
                             keybindObj.isListening = false
-                            local pickedKey = input.KeyCode
-                            if pickedKey == Enum.KeyCode.Backspace or pickedKey == Enum.KeyCode.Delete then
-                                pickedKey = Enum.KeyCode.Unknown
-                            end
-                            keybindObj:Set(pickedKey, false)
+                            keybindObj:Set(input.KeyCode, false)
                             tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                         end
                     elseif not gameProcessed and input.UserInputType == Enum.UserInputType.Keyboard then
@@ -5864,23 +5664,6 @@ function vora_ui:AddSection(config)
                 end)
                 keybindClickButton.MouseLeave:Connect(function()
                     if not keybindObj.isListening then tween_to(keybindObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2) end
-                end)
-                
-                toggleModeClickButton.MouseEnter:Connect(function()
-                    if keybindObj.mode ~= "Toggle" then
-                        tween_to(toggleModeFrame, {BackgroundColor3 = Color3.fromRGB(42, 42, 42)}, 0.12)
-                    end
-                end)
-                toggleModeClickButton.MouseLeave:Connect(function()
-                    updateModeVisuals()
-                end)
-                holdModeClickButton.MouseEnter:Connect(function()
-                    if keybindObj.mode ~= "Hold" then
-                        tween_to(holdModeFrame, {BackgroundColor3 = Color3.fromRGB(42, 42, 42)}, 0.12)
-                    end
-                end)
-                holdModeClickButton.MouseLeave:Connect(function()
-                    updateModeVisuals()
                 end)
                 
                 groupObj.Library:RegisterControl(keybindConfig.Flag, function()
@@ -6053,8 +5836,10 @@ function vora_ui:AddSection(config)
             end
 
             function groupObj:AddDropdown(dropdownConfig, config)
-                -- Support old API: AddDropdown(name, config)
+                -- Support old API: AddDropdown(Idx, config) - match Library.lua pattern
+                local Idx = nil
                 if type(dropdownConfig) == "string" then
+                    Idx = dropdownConfig
                     dropdownConfig = {Name = dropdownConfig, Flag = dropdownConfig, Text = config and config.Text or dropdownConfig, Values = config and config.Values or {}}
                 end
                 
@@ -6277,12 +6062,15 @@ function vora_ui:AddSection(config)
                         })
                         optionClickButton.MouseButton1Click:Connect(function()
                             dropdownObj.value = option
+                            dropdownObj.Value = dropdownObj.value
                             closeDropdown(false)
                             local optionText = tostring(option)
                             dropdownObj.selectedLabelText.Text = optionText
                             local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor)
                             tween_to(dropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
-                            dropdownConfig.Callback(option)
+                            if dropdownObj.Changed then
+                                dropdownObj.Changed(option)
+                            end
                         end)
                         optionClickButton.MouseEnter:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.2) end end)
                         optionClickButton.MouseLeave:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.2) end end)
@@ -6354,17 +6142,20 @@ function vora_ui:AddSection(config)
                     end
                 end)
                 
+                dropdownObj.Changed = dropdownConfig.Callback
+                
                 function dropdownObj:Set(value, silent)
                     if value == nil then return end
                     dropdownObj.value = value
+                    dropdownObj.Value = dropdownObj.value
                     local displayValue = tostring(value)
                     dropdownObj.selectedLabelText.Text = displayValue
                     local newWidth = math.max(70 * scale_factor, measure_text_width(displayValue, 12 * scale_factor) + 30 * scale_factor)
                     dropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
                     dropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
                     createOptionsYay()
-                    if not silent then
-                        dropdownConfig.Callback(value)
+                    if not silent and dropdownObj.Changed then
+                        dropdownObj.Changed(value)
                     end
                 end
 
@@ -6372,8 +6163,8 @@ function vora_ui:AddSection(config)
                     return dropdownObj.value
                 end
                 
-                function dropdownObj:OnChanged(callback)
-                    dropdownConfig.Callback = callback or function() end
+                function dropdownObj:OnChanged(Func, callback)
+                    dropdownObj.Changed = Func or callback
                 end
                 
                 function dropdownObj:UpdateOptions(newOptions)
@@ -6434,13 +6225,24 @@ function vora_ui:AddSection(config)
                     end
                 end)
                 
+                -- Store in global Options table
+                Options[Idx or dropdownConfig.Name] = dropdownObj
+                dropdownObj.Value = dropdownObj.value
+                
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, dropdownObj)
                 return dropdownObj
             end
 
-            function groupObj:AddMultiDropdown(multiDropdownConfig)
+            function groupObj:AddMultiDropdown(multiDropdownConfig, config)
+                -- Support old API: AddMultiDropdown(Idx, config) - match Library.lua pattern
+                local Idx = nil
+                if type(multiDropdownConfig) == "string" then
+                    Idx = multiDropdownConfig
+                    multiDropdownConfig = {Name = multiDropdownConfig, Values = config and config.Values or {}}
+                end
+                
                 multiDropdownConfig = multiDropdownConfig or {}
                 multiDropdownConfig.Name = multiDropdownConfig.Name or "Multi Dropdown"
                 multiDropdownConfig.Options = multiDropdownConfig.Options or {"Option 1", "Option 2", "Option 3"}
@@ -6881,15 +6683,23 @@ function vora_ui:AddSection(config)
                 function labelObj:SetName(text)
                     labelText.Text = tostring(text)
                 end
+                function labelObj:SetVisible(visible)
+                    labelObj.Instance.Visible = visible
+                end
                 
                 groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
                 update_group_size()
                 return labelObj
             end
             
-            function groupObj:AddTextInput(textInputConfig)
+            function groupObj:AddTextInput(textInputConfig, config)
+                -- Support old API: AddTextInput(name, config)
+                if type(textInputConfig) == "string" then
+                    textInputConfig = {Name = textInputConfig, Flag = textInputConfig, Text = config and config.Text or textInputConfig, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
+                end
+
                 textInputConfig = textInputConfig or {}
-                textInputConfig.Name = textInputConfig.Name or "Input"
+                textInputConfig.Name = textInputConfig.Name or textInputConfig.Text or "Input"
                 textInputConfig.Placeholder = textInputConfig.Placeholder or "Enter text..."
                 textInputConfig.Default = tostring(textInputConfig.Default or "")
                 textInputConfig.Callback = textInputConfig.Callback or function() end
