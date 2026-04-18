@@ -5413,7 +5413,7 @@ function vora_ui:AddSection(config)
             function groupObj:AddButton(buttonConfig)
                 buttonConfig = buttonConfig or {}
                 buttonConfig.Name = buttonConfig.Name or "Button"
-                buttonConfig.Icon = buttonConfig.Icon
+                buttonConfig.Icon = buttonConfig.Icon or nil
                 buttonConfig.Locked = buttonConfig.Locked or false
                 buttonConfig.Callback = buttonConfig.Callback or function() end
                 addSearchTerm(buttonConfig.Name)
