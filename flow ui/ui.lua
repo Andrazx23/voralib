@@ -5214,16 +5214,13 @@ function vora_ui:AddSection(config)
                         toggleConfig.Callback(toggleObj.value)
                     end
                 end
+
                 function toggleObj:Get()
                     return toggleObj.value
                 end
                 
-                function toggleObj:OnChanged(Func, callback)
-                    if type(Func) == "function" then
-                        toggleConfig.Callback = Func
-                    elseif type(callback) == "function" then
-                        toggleConfig.Callback = callback
-                    end
+                function toggleObj:OnChanged(callback)
+                    toggleConfig.Callback = callback or function() end
                 end
                 
                 toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
@@ -5381,12 +5378,13 @@ function vora_ui:AddSection(config)
                         sliderConfig.Callback(value)
                     end
                 end
+
                 function sliderObj:Get()
                     return sliderObj.value
                 end
                 
-                function sliderObj:OnChanged(Func, callback)
-                    sliderConfig.Callback = Func or callback
+                function sliderObj:OnChanged(callback)
+                    sliderConfig.Callback = callback or function() end
                 end
                 
                 local isDraggingSlider = false
@@ -6397,8 +6395,8 @@ function vora_ui:AddSection(config)
                     return dropdownObj.value
                 end
                 
-                function dropdownObj:OnChanged(Func, callback)
-                    dropdownConfig.Callback = Func or callback
+                function dropdownObj:OnChanged(callback)
+                    dropdownConfig.Callback = callback or function() end
                 end
                 
                 function dropdownObj:UpdateOptions(newOptions)
@@ -6909,9 +6907,6 @@ function vora_ui:AddSection(config)
                 end
                 function labelObj:SetName(text)
                     labelText.Text = tostring(text)
-                end
-                function labelObj:SetVisible(visible)
-                    labelObj.Instance.Visible = visible
                 end
                 
                 groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
