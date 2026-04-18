@@ -81,11 +81,6 @@ local vora_logo     = getcustomasset("vora_logo.png")
 local vora_ui = {}
 vora_ui.__index = vora_ui
 
-local Toggles = {}
-local Options = {}
-_G.Toggles = Toggles
-_G.Options = Options
-
 local local_player      = players.LocalPlayer
 local player_mouse      = local_player:GetMouse()
 
@@ -5202,7 +5197,6 @@ function vora_ui:AddSection(config)
                 
                 function toggleObj:Set(value, silent)
                     toggleObj.value = value == true
-                    toggleObj.Value = toggleObj.value
                     if toggleObj.value then
                         tween_to(toggleObj.switchFrame, {BackgroundColor3 = groupObj.Library.config.AccentColor}, 0.2)
                         tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.462, 0, 0.143, 0), BackgroundColor3 = Color3.new(1, 1, 1)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
@@ -5214,16 +5208,13 @@ function vora_ui:AddSection(config)
                         toggleConfig.Callback(toggleObj.value)
                     end
                 end
+
                 function toggleObj:Get()
                     return toggleObj.value
                 end
                 
-                function toggleObj:OnChanged(Func, callback)
-                    if type(Func) == "function" then
-                        toggleConfig.Callback = Func
-                    elseif type(callback) == "function" then
-                        toggleConfig.Callback = callback
-                    end
+                function toggleObj:OnChanged(callback)
+                    toggleConfig.Callback = callback or function() end
                 end
                 
                 toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
@@ -5233,24 +5224,15 @@ function vora_ui:AddSection(config)
                     toggleObj:Set(value == true, true)
                 end)
                 
-                -- Store in global Toggles table
-                Toggles[toggleConfig.Name] = toggleObj
-                toggleObj.Value = toggleObj.value
-                
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, toggleObj)
                 return toggleObj
             end
 
-            function groupObj:AddSlider(sliderConfig, config)
-                -- Support old API: AddSlider(name, config)
-                if type(sliderConfig) == "string" then
-                    sliderConfig = {Name = sliderConfig, Flag = sliderConfig, Text = config and config.Text or sliderConfig, Min = config and config.Min, Max = config and config.Max, Default = config and config.Default, Increment = config and config.Rounding, Callback = config and config.Callback}
-                end
-
+            function groupObj:AddSlider(sliderConfig)
                 sliderConfig = sliderConfig or {}
-                sliderConfig.Name = sliderConfig.Name or sliderConfig.Text or "Slider"
+                sliderConfig.Name = sliderConfig.Name or "Slider"
                 sliderConfig.Min = tonumber(sliderConfig.Min) or 0
                 sliderConfig.Max = tonumber(sliderConfig.Max) or 100
                 if sliderConfig.Max < sliderConfig.Min then
@@ -5375,18 +5357,18 @@ function vora_ui:AddSection(config)
                 function sliderObj:Set(value, instant, silent)
                     value = normalize_slider_value(value, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
                     sliderObj.value = value
-                    sliderObj.Value = sliderObj.value
                     updateSliderVisuals(instant ~= true)
                     if not silent then
                         sliderConfig.Callback(value)
                     end
                 end
+
                 function sliderObj:Get()
                     return sliderObj.value
                 end
                 
-                function sliderObj:OnChanged(Func, callback)
-                    sliderConfig.Callback = Func or callback
+                function sliderObj:OnChanged(callback)
+                    sliderConfig.Callback = callback or function() end
                 end
                 
                 local isDraggingSlider = false
@@ -5427,11 +5409,6 @@ function vora_ui:AddSection(config)
                 end, function(value)
                     sliderObj:Set(tonumber(value) or sliderConfig.Min, true, true)
                 end)
-                
-                -- Store in global Options table
-                Options[sliderConfig.Name] = sliderObj
-                sliderObj.Value = sliderObj.value
-                
                 groupObj.element_y = groupObj.element_y + 44 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, sliderObj)
@@ -6300,7 +6277,6 @@ function vora_ui:AddSection(config)
                         })
                         optionClickButton.MouseButton1Click:Connect(function()
                             dropdownObj.value = option
-                            dropdownObj.Value = dropdownObj.value
                             closeDropdown(false)
                             local optionText = tostring(option)
                             dropdownObj.selectedLabelText.Text = optionText
@@ -6381,7 +6357,6 @@ function vora_ui:AddSection(config)
                 function dropdownObj:Set(value, silent)
                     if value == nil then return end
                     dropdownObj.value = value
-                    dropdownObj.Value = dropdownObj.value
                     local displayValue = tostring(value)
                     dropdownObj.selectedLabelText.Text = displayValue
                     local newWidth = math.max(70 * scale_factor, measure_text_width(displayValue, 12 * scale_factor) + 30 * scale_factor)
@@ -6397,8 +6372,8 @@ function vora_ui:AddSection(config)
                     return dropdownObj.value
                 end
                 
-                function dropdownObj:OnChanged(Func, callback)
-                    dropdownConfig.Callback = Func or callback
+                function dropdownObj:OnChanged(callback)
+                    dropdownConfig.Callback = callback or function() end
                 end
                 
                 function dropdownObj:UpdateOptions(newOptions)
@@ -6458,10 +6433,6 @@ function vora_ui:AddSection(config)
                         dropdownObj:Set(value, true)
                     end
                 end)
-                
-                -- Store in global Options table
-                Options[dropdownConfig.Name] = dropdownObj
-                dropdownObj.Value = dropdownObj.value
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
@@ -6910,23 +6881,15 @@ function vora_ui:AddSection(config)
                 function labelObj:SetName(text)
                     labelText.Text = tostring(text)
                 end
-                function labelObj:SetVisible(visible)
-                    labelObj.Instance.Visible = visible
-                end
                 
                 groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
                 update_group_size()
                 return labelObj
             end
             
-            function groupObj:AddTextInput(textInputConfig, config)
-                -- Support old API: AddTextInput(name, config)
-                if type(textInputConfig) == "string" then
-                    textInputConfig = {Name = textInputConfig, Flag = textInputConfig, Text = config and config.Text or textInputConfig, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
-                end
-
+            function groupObj:AddTextInput(textInputConfig)
                 textInputConfig = textInputConfig or {}
-                textInputConfig.Name = textInputConfig.Name or textInputConfig.Text or "Input"
+                textInputConfig.Name = textInputConfig.Name or "Input"
                 textInputConfig.Placeholder = textInputConfig.Placeholder or "Enter text..."
                 textInputConfig.Default = tostring(textInputConfig.Default or "")
                 textInputConfig.Callback = textInputConfig.Callback or function() end
