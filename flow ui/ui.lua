@@ -6384,6 +6384,10 @@ function vora_ui:AddSection(config)
                         groupObj.Library:SetSearchFilter(groupObj.Library._searchQuery)
                     end
                 end
+                
+                function dropdownObj:SetValues(newOptions)
+                    dropdownObj:UpdateOptions(newOptions)
+                end
 
                 if dropdownConfig.AutoRefresh then
                     groupObj.Library:_RegisterRefreshJob(dropdownConfig.RefreshInterval, function()
