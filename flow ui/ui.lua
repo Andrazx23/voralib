@@ -5202,6 +5202,8 @@ function vora_ui:AddSection(config)
                 
                 local toggleClickButton = create("TextButton", {Text = "", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Parent = toggleObj.switchFrame})
                 
+                toggleObj.Changed = toggleConfig.Callback
+                
                 function toggleObj:Set(value, silent)
                     toggleObj.value = value == true
                     toggleObj.Value = toggleObj.value
@@ -5212,8 +5214,8 @@ function vora_ui:AddSection(config)
                         tween_to(toggleObj.switchFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                         tween_to(toggleObj.circleFrame, {Position = UDim2.new(0.0104, 0, 0.143, 0), BackgroundColor3 = Color3.fromRGB(75, 75, 75)}, 0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
                     end
-                    if not silent then
-                        toggleConfig.Callback(toggleObj.value)
+                    if not silent and toggleObj.Changed then
+                        toggleObj.Changed(toggleObj.value)
                     end
                 end
                 function toggleObj:Get()
@@ -5221,11 +5223,7 @@ function vora_ui:AddSection(config)
                 end
                 
                 function toggleObj:OnChanged(Func, callback)
-                    if type(Func) == "function" then
-                        toggleConfig.Callback = Func
-                    elseif type(callback) == "function" then
-                        toggleConfig.Callback = callback
-                    end
+                    toggleObj.Changed = Func or callback
                 end
                 
                 toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
@@ -5238,13 +5236,6 @@ function vora_ui:AddSection(config)
                 -- Store in global Toggles table
                 Toggles[Idx or toggleConfig.Name] = toggleObj
                 toggleObj.Value = toggleObj.value
-                
-                -- Debug: verify storage
-                if Idx then
-                    warn("[ui.lua] Stored toggle with Idx: " .. tostring(Idx))
-                else
-                    warn("[ui.lua] Stored toggle with Name: " .. tostring(toggleConfig.Name))
-                end
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
@@ -5383,13 +5374,15 @@ function vora_ui:AddSection(config)
                     sliderObj.valueLabelText.Text = formatDisplayValue(sliderObj.value)
                 end
 
+                sliderObj.Changed = sliderConfig.Callback
+                
                 function sliderObj:Set(value, instant, silent)
                     value = normalize_slider_value(value, sliderConfig.Min, sliderConfig.Max, sliderConfig.Increment, sliderPrecision)
                     sliderObj.value = value
                     sliderObj.Value = sliderObj.value
                     updateSliderVisuals(instant ~= true)
-                    if not silent then
-                        sliderConfig.Callback(value)
+                    if not silent and sliderObj.Changed then
+                        sliderObj.Changed(value)
                     end
                 end
                 function sliderObj:Get()
@@ -5397,7 +5390,7 @@ function vora_ui:AddSection(config)
                 end
                 
                 function sliderObj:OnChanged(Func, callback)
-                    sliderConfig.Callback = Func or callback
+                    sliderObj.Changed = Func or callback
                 end
                 
                 local isDraggingSlider = false
@@ -6075,7 +6068,9 @@ function vora_ui:AddSection(config)
                             dropdownObj.selectedLabelText.Text = optionText
                             local newWidth = math.max(70 * scale_factor, measure_text_width(optionText, 12 * scale_factor) + 30 * scale_factor)
                             tween_to(dropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
-                            dropdownConfig.Callback(option)
+                            if dropdownObj.Changed then
+                                dropdownObj.Changed(option)
+                            end
                         end)
                         optionClickButton.MouseEnter:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(180, 180, 180)}, 0.2) end end)
                         optionClickButton.MouseLeave:Connect(function() if dropdownObj.value ~= option then tween_to(optionLabelText, {TextColor3 = Color3.fromRGB(124, 124, 124)}, 0.2) end end)
@@ -6147,6 +6142,8 @@ function vora_ui:AddSection(config)
                     end
                 end)
                 
+                dropdownObj.Changed = dropdownConfig.Callback
+                
                 function dropdownObj:Set(value, silent)
                     if value == nil then return end
                     dropdownObj.value = value
@@ -6157,8 +6154,8 @@ function vora_ui:AddSection(config)
                     dropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
                     dropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
                     createOptionsYay()
-                    if not silent then
-                        dropdownConfig.Callback(value)
+                    if not silent and dropdownObj.Changed then
+                        dropdownObj.Changed(value)
                     end
                 end
 
@@ -6167,7 +6164,7 @@ function vora_ui:AddSection(config)
                 end
                 
                 function dropdownObj:OnChanged(Func, callback)
-                    dropdownConfig.Callback = Func or callback
+                    dropdownObj.Changed = Func or callback
                 end
                 
                 function dropdownObj:UpdateOptions(newOptions)
