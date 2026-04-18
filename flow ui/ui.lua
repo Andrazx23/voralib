@@ -5208,6 +5208,10 @@ function vora_ui:AddSection(config)
                     return toggleObj.value
                 end
                 
+                function toggleObj:OnChanged(callback)
+                    toggleConfig.Callback = callback or function() end
+                end
+                
                 toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
                 groupObj.Library:RegisterControl(toggleConfig.Flag, function()
                     return toggleObj:Get()
@@ -5356,6 +5360,10 @@ function vora_ui:AddSection(config)
 
                 function sliderObj:Get()
                     return sliderObj.value
+                end
+                
+                function sliderObj:OnChanged(callback)
+                    sliderConfig.Callback = callback or function() end
                 end
                 
                 local isDraggingSlider = false
@@ -6347,6 +6355,10 @@ function vora_ui:AddSection(config)
 
                 function dropdownObj:Get()
                     return dropdownObj.value
+                end
+                
+                function dropdownObj:OnChanged(callback)
+                    dropdownConfig.Callback = callback or function() end
                 end
                 
                 function dropdownObj:UpdateOptions(newOptions)
