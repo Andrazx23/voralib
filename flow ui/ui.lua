@@ -5410,12 +5410,17 @@ function vora_ui:AddSection(config)
                 return sliderObj
             end
 
-            function groupObj:AddButton(buttonConfig)
+            function groupObj:AddButton(buttonConfig, callback)
+                -- Support old API: AddButton(text, callback)
+                if type(buttonConfig) == "string" then
+                    buttonConfig = {Text = buttonConfig, Func = callback}
+                end
+                
                 buttonConfig = buttonConfig or {}
-                buttonConfig.Name = buttonConfig.Name or "Button"
+                buttonConfig.Name = buttonConfig.Name or buttonConfig.Text or "Button"
                 buttonConfig.Icon = buttonConfig.Icon or nil
                 buttonConfig.Locked = buttonConfig.Locked or false
-                buttonConfig.Callback = buttonConfig.Callback or function() end
+                buttonConfig.Callback = buttonConfig.Callback or buttonConfig.Func or function() end
                 addSearchTerm(buttonConfig.Name)
                 
                 local buttonObj = {}
