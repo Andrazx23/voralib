@@ -5239,6 +5239,13 @@ function vora_ui:AddSection(config)
                 Toggles[Idx or toggleConfig.Name] = toggleObj
                 toggleObj.Value = toggleObj.value
                 
+                -- Debug: verify storage
+                if Idx then
+                    warn("[ui.lua] Stored toggle with Idx: " .. tostring(Idx))
+                else
+                    warn("[ui.lua] Stored toggle with Name: " .. tostring(toggleConfig.Name))
+                end
+                
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
                 update_group_size()
                 table.insert(groupObj.elements, toggleObj)
