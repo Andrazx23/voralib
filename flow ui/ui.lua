@@ -6892,14 +6892,9 @@ function vora_ui:AddSection(config)
                 return labelObj
             end
             
-            function groupObj:AddTextInput(textInputConfig, config)
-                -- Support old API: AddTextInput(name, config)
-                if type(textInputConfig) == "string" then
-                    textInputConfig = {Name = textInputConfig, Flag = textInputConfig, Text = config and config.Text or textInputConfig, Placeholder = config and config.Placeholder or "Enter text...", Default = config and config.Default, Callback = config and config.Callback}
-                end
-
+            function groupObj:AddTextInput(textInputConfig)
                 textInputConfig = textInputConfig or {}
-                textInputConfig.Name = textInputConfig.Name or textInputConfig.Text or "Input"
+                textInputConfig.Name = textInputConfig.Name or "Input"
                 textInputConfig.Placeholder = textInputConfig.Placeholder or "Enter text..."
                 textInputConfig.Default = tostring(textInputConfig.Default or "")
                 textInputConfig.Callback = textInputConfig.Callback or function() end
