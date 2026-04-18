@@ -17,33 +17,18 @@ local lighting          = safe_clone(game:GetService("Lighting"))
 
 --#region ══╗ Icons System ╔═════════════════════════════════════════════════════
 
-local default_icons = {
-    section         = "rbxassetid://98092584632154",
-    tab             = "rbxassetid://94219370057308",
-    group           = "rbxassetid://10723427199",
-    search          = "rbxassetid://10734943674",
-    settings        = "rbxassetid://6031280882",
-    expand          = "rbxassetid://111626678408582",
-    resize          = "rbxassetid://111626678408582",
-    close           = "rbxassetid://10747384394",
-    dropdown_arrow  = "rbxassetid://111626678408582",
-}
-
 local icons_module = nil
-local icons_cache  = {}
+local icons_cache = {}
 
 local function load_icons_module()
     if icons_module then return icons_module end
-
     local ok, result = pcall(function()
         return loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua"))()
     end)
-
     if ok and result then
         icons_module = result
         pcall(function() icons_module.SetIconsType("lucide") end)
     end
-
     return icons_module
 end
 
@@ -72,14 +57,21 @@ local function get_icon(name, fallback)
     return fallback or default_icons.tab
 end
 
-pcall(function()
-    writefile("vora_logo.png", game:HttpGet("https://github.com/Andrazx23/voralib/blob/main/VoraHub.G7_20260405143108.png?raw=true"))
-end)
+local default_icons = {
+    section         = "rbxassetid://98092584632154",
+    tab             = "rbxassetid://94219370057308",
+    group           = "rbxassetid://10723427199",
+    search          = "rbxassetid://10734943674",
+    settings        = "rbxassetid://6031280882",
+    expand          = "rbxassetid://111626678408582",
+    resize          = "rbxassetid://111626678408582",
+    close           = "rbxassetid://10747384394",
+    dropdown_arrow  = "rbxassetid://111626678408582",
+}
 
-local vora_logo = ""
-pcall(function()
-    vora_logo = getcustomasset("vora_logo.png")
-end)
+-- Custom Logo Image
+local vora_img      = writefile("vora_logo.png", game:HttpGet("https://github.com/Andrazx23/voralib/blob/main/VoraHub.G7_20260405143108.png?raw=true"))
+local vora_logo     = getcustomasset("vora_logo.png")
 
 --#endregion═════════════════════════════════════════════════════════════════════
 
@@ -135,11 +127,10 @@ local function apply_font(instance, value, fallbackEnum)
         return false
     end
 
-    local ok = pcall(function()
+    pcall(function()
         instance.Font = get_fallback_font(value, fallbackEnum)
     end)
-
-    return ok
+    return false
 end
 
 local Font = {
@@ -193,143 +184,141 @@ local function disconnect_signal(conn)
     end
 end
 
-local function make_draggable(frame, handle, library_ref)
-    local is_dragging       = false
-    local active_drag_input = nil
-    local drag_start_pos    = nil
-    local frame_start_pos   = nil
-    local target_position   = frame.Position
-    local drag_lerp_speed   = is_mobile and 18 or 22
-    local render_conn       = nil
-
+local function make_draggable(frame, handle, libraryRef)
+    local amIDragging = false
+    local activeDragInput
+    local whereDidIStart
+    local whereWasIBefore
+    local targetDragPosition = frame.Position
+    local dragLerpSpeed = is_mobile and 18 or 22
+    local renderDragConn
+    
     handle = handle or frame
 
-    local function stop_drag_loop()
-        disconnect_signal(render_conn)
-        render_conn = nil
+    local function stopDragLoop()
+        disconnect_signal(renderDragConn)
+        renderDragConn = nil
     end
 
-    local function ensure_drag_loop()
-        if render_conn and render_conn.Connected then
+    local function ensureDragLoop()
+        if renderDragConn and renderDragConn.Connected then
             return
         end
-        render_conn = run_service.RenderStepped:Connect(function(dt)
+        renderDragConn = run_service.RenderStepped:Connect(function(dt)
             if not frame or not frame.Parent then
-                stop_drag_loop()
+                stopDragLoop()
                 return
             end
-            local current_pos = frame.Position
-            local goal_pos    = target_position
-            local delta       = math.abs(goal_pos.X.Offset - current_pos.X.Offset)
-                              + math.abs(goal_pos.Y.Offset - current_pos.Y.Offset)
-
-            if delta <= 0.1 then
-                if current_pos ~= goal_pos then
-                    frame.Position = goal_pos
+            local currentPos = frame.Position
+            local goalPos = targetDragPosition
+            local offsetDelta = math.abs(goalPos.X.Offset - currentPos.X.Offset) + math.abs(goalPos.Y.Offset - currentPos.Y.Offset)
+            if offsetDelta <= 0.1 then
+                if currentPos ~= goalPos then
+                    frame.Position = goalPos
                 end
-                if not is_dragging then
-                    stop_drag_loop()
+                if not amIDragging then
+                    stopDragLoop()
                 end
                 return
             end
-
-            local alpha = math.clamp(1 - math.exp(-drag_lerp_speed * dt), 0, 0.45)
-            frame.Position = current_pos:Lerp(goal_pos, alpha)
+            local alpha = math.clamp(1 - math.exp(-dragLerpSpeed * dt), 0, 0.45)
+            frame.Position = currentPos:Lerp(goalPos, alpha)
         end)
-
-        if library_ref and library_ref._TrackConnection then
-            library_ref:_TrackConnection(render_conn)
+        if libraryRef and libraryRef._TrackConnection then
+            libraryRef:_TrackConnection(renderDragConn)
         end
     end
-
-    local function update_target_position(input)
-        local delta = input.Position - drag_start_pos
-        target_position = UDim2.new(
-            frame_start_pos.X.Scale,
-            frame_start_pos.X.Offset + delta.X,
-            frame_start_pos.Y.Scale,
-            frame_start_pos.Y.Offset + delta.Y
+    
+    local function updateTargetPositionYay(input)
+        local howMuchDidIMove = input.Position - whereDidIStart
+        targetDragPosition = UDim2.new(
+            whereWasIBefore.X.Scale,
+            whereWasIBefore.X.Offset + howMuchDidIMove.X,
+            whereWasIBefore.Y.Scale,
+            whereWasIBefore.Y.Offset + howMuchDidIMove.Y
         )
     end
+    
+    local inputBeganConn = handle.InputBegan:Connect(function(input)
+        local isMouse = input.UserInputType == Enum.UserInputType.MouseButton1
+        local isTouch = input.UserInputType == Enum.UserInputType.Touch
+        if not isMouse and not isTouch then
+            return
+        end
 
-    local input_began_conn = handle.InputBegan:Connect(function(input)
-        local is_mouse = input.UserInputType == Enum.UserInputType.MouseButton1
-        local is_touch = input.UserInputType == Enum.UserInputType.Touch
-        if not is_mouse and not is_touch then return end
-
-        is_dragging       = true
-        active_drag_input = is_touch and input or nil
-        drag_start_pos    = input.Position
-        frame_start_pos   = frame.Position
-        target_position   = frame.Position
-        ensure_drag_loop()
-
-        local input_end_conn
-        input_end_conn = input.Changed:Connect(function()
+        amIDragging = true
+        activeDragInput = isTouch and input or nil
+        whereDidIStart = input.Position
+        whereWasIBefore = frame.Position
+        targetDragPosition = frame.Position
+        ensureDragLoop()
+        
+        local inputEndConn
+        inputEndConn = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 if frame and frame.Parent then
-                    frame.Position = target_position
+                    frame.Position = targetDragPosition
                 end
-                is_dragging       = false
-                active_drag_input = nil
-                stop_drag_loop()
-                if input_end_conn then
-                    input_end_conn:Disconnect()
-                    input_end_conn = nil
+                amIDragging = false
+                activeDragInput = nil
+                stopDragLoop()
+                if inputEndConn then
+                    inputEndConn:Disconnect()
+                    inputEndConn = nil
                 end
             end
         end)
-
-        if library_ref and library_ref._TrackConnection then
-            library_ref:_TrackConnection(input_end_conn)
+        if libraryRef and libraryRef._TrackConnection then
+            libraryRef:_TrackConnection(inputEndConn)
         end
     end)
-
-    local input_changed_conn = input_service.InputChanged:Connect(function(input)
-        if not is_dragging then return end
+    
+    local userInputChangedConn = input_service.InputChanged:Connect(function(input)
+        if not amIDragging then
+            return
+        end
         if input.UserInputType == Enum.UserInputType.MouseMovement then
-            update_target_position(input)
-        elseif input.UserInputType == Enum.UserInputType.Touch
-            and (active_drag_input == nil or input == active_drag_input) then
-            update_target_position(input)
+            updateTargetPositionYay(input)
+        elseif input.UserInputType == Enum.UserInputType.Touch and (activeDragInput == nil or input == activeDragInput) then
+            updateTargetPositionYay(input)
         end
     end)
 
-    if library_ref and library_ref._TrackConnection then
-        library_ref:_TrackConnection(input_began_conn)
-        library_ref:_TrackConnection(input_changed_conn)
+    if libraryRef and libraryRef._TrackConnection then
+        libraryRef:_TrackConnection(inputBeganConn)
+        libraryRef:_TrackConnection(userInputChangedConn)
     end
 end
 
-local function start_position_tracker(library_ref, anchor_instance, update_fn)
-    if type(update_fn) ~= "function" or not anchor_instance then
+local function start_position_tracker(libraryRef, anchorInstance, updateFn)
+    if type(updateFn) ~= "function" or not anchorInstance then
         return nil
     end
 
-    local active      = true
+    local active = true
     local connections = {}
 
-    local function bind_signal(instance, property_name)
-        if not instance then return end
-        table.insert(connections, library_ref:_TrackConnection(
-            instance:GetPropertyChangedSignal(property_name):Connect(update_fn)
-        ))
+    local function bindSignal(instance, propertyName)
+        if not instance then
+            return
+        end
+        table.insert(connections, libraryRef:_TrackConnection(instance:GetPropertyChangedSignal(propertyName):Connect(updateFn)))
     end
 
-    bind_signal(anchor_instance, "AbsolutePosition")
-    bind_signal(anchor_instance, "AbsoluteSize")
-    table.insert(connections, library_ref:_TrackConnection(
-        anchor_instance.AncestryChanged:Connect(update_fn)
-    ))
+    bindSignal(anchorInstance, "AbsolutePosition")
+    bindSignal(anchorInstance, "AbsoluteSize")
+    table.insert(connections, libraryRef:_TrackConnection(anchorInstance.AncestryChanged:Connect(updateFn)))
 
-    if library_ref and library_ref.screen_gui then
-        bind_signal(library_ref.screen_gui, "AbsoluteSize")
+    if libraryRef and libraryRef.screen_gui then
+        bindSignal(libraryRef.screen_gui, "AbsoluteSize")
     end
 
-    update_fn()
+    updateFn()
 
     return function()
-        if not active then return end
+        if not active then
+            return
+        end
         active = false
         for i = #connections, 1, -1 do
             disconnect_signal(connections[i])
@@ -338,166 +327,153 @@ local function start_position_tracker(library_ref, anchor_instance, update_fn)
     end
 end
 
-local function attach_scrollbar(library_ref, scroll_frame, parent_instance, options)
-    if not library_ref or not scroll_frame or not parent_instance then
+local function attach_scrollbar(libraryRef, scrollFrame, parentInstance, options)
+    if not libraryRef or not scrollFrame or not parentInstance then
         return nil
     end
 
     options = options or {}
 
-    local track_width      = math.max(4, math.floor((options.TrackWidth      or (6  * scale_factor)) + 0.5))
-    local thumb_width      = math.max(2, math.min(track_width - 1, math.floor((options.ThumbWidth or (3 * scale_factor)) + 0.5)))
-    local edge_inset       = math.max(1, math.floor((options.EdgeInset       or (2  * scale_factor)) + 0.5))
-    local vertical_inset   = math.max(2, math.floor((options.VerticalInset   or (4  * scale_factor)) + 0.5))
-    local min_thumb_height = math.max(18, math.floor((options.MinThumbHeight or (26 * scale_factor)) + 0.5))
-    local idle_thumb_height= math.max(min_thumb_height, math.floor((options.IdleThumbHeight or (42 * scale_factor)) + 0.5))
-    local always_show_track= options.AlwaysShowTrack == true
-    local z_index          = options.ZIndex or ((scroll_frame.ZIndex or 1) + 2)
-    local x_offset         = options.XOffset or 0
+    local trackWidth = math.max(4, math.floor((options.TrackWidth or (6 * scale_factor)) + 0.5))
+    local thumbWidth = math.max(2, math.min(trackWidth - 1, math.floor((options.ThumbWidth or (3 * scale_factor)) + 0.5)))
+    local edgeInset = math.max(1, math.floor((options.EdgeInset or (2 * scale_factor)) + 0.5))
+    local verticalInset = math.max(2, math.floor((options.VerticalInset or (4 * scale_factor)) + 0.5))
+    local minThumbHeight = math.max(18, math.floor((options.MinThumbHeight or (26 * scale_factor)) + 0.5))
+    local idleThumbHeight = math.max(minThumbHeight, math.floor((options.IdleThumbHeight or (42 * scale_factor)) + 0.5))
+    local alwaysShowTrack = options.AlwaysShowTrack == true
+    local zIndex = options.ZIndex or ((scrollFrame.ZIndex or 1) + 2)
+    local xOffset = options.XOffset or 0
 
-    local track_frame = create("Frame", {
-        Name                  = "VoraHubScrollbarTrack",
-        BackgroundColor3      = Color3.fromRGB(11, 11, 14),
-        BackgroundTransparency= 0.12,
-        BorderSizePixel       = 0,
-        Visible               = false,
-        ZIndex                = z_index,
-        Parent                = parent_instance
+    local trackFrame = create("Frame", {
+        Name = "VoraHubScrollbarTrack",
+        BackgroundColor3 = Color3.fromRGB(11, 11, 14),
+        BackgroundTransparency = 0.12,
+        BorderSizePixel = 0,
+        Visible = false,
+        ZIndex = zIndex,
+        Parent = parentInstance
     })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = track_frame})
+    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = trackFrame})
 
-    local thumb_frame = create("Frame", {
-        Name             = "VoraHubScrollbarThumb",
-        AnchorPoint      = Vector2.new(0.5, 0),
-        BackgroundColor3 = library_ref.config.AccentColor,
-        BorderSizePixel  = 0,
-        Position         = UDim2.new(0.5, 0, 0, 0),
-        Size             = UDim2.new(0, thumb_width, 0, min_thumb_height),
-        ZIndex           = z_index + 1,
-        Parent           = track_frame
+    local thumbFrame = create("Frame", {
+        Name = "VoraHubScrollbarThumb",
+        AnchorPoint = Vector2.new(0.5, 0),
+        BackgroundColor3 = libraryRef.config.AccentColor,
+        BorderSizePixel = 0,
+        Position = UDim2.new(0.5, 0, 0, 0),
+        Size = UDim2.new(0, thumbWidth, 0, minThumbHeight),
+        ZIndex = zIndex + 1,
+        Parent = trackFrame
     })
-    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = thumb_frame})
+    create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = thumbFrame})
 
-    local function resolve_canvas_height()
-        local canvas_height = math.max(scroll_frame.CanvasSize.Y.Offset, 0)
-        local ok, absolute_canvas = pcall(function()
-            return scroll_frame.AbsoluteCanvasSize
+    local function resolveCanvasHeight()
+        local canvasHeight = math.max(scrollFrame.CanvasSize.Y.Offset, 0)
+        local okAbsoluteCanvas, absoluteCanvasSize = pcall(function()
+            return scrollFrame.AbsoluteCanvasSize
         end)
-        if ok and typeof(absolute_canvas) == "Vector2" then
-            canvas_height = math.max(canvas_height, absolute_canvas.Y)
+        if okAbsoluteCanvas and typeof(absoluteCanvasSize) == "Vector2" then
+            canvasHeight = math.max(canvasHeight, absoluteCanvasSize.Y)
         end
-        return canvas_height
+        return canvasHeight
     end
 
-    local function update_scrollbar()
-        if library_ref._destroyed
-            or not scroll_frame.Parent
-            or not parent_instance.Parent
-            or not track_frame.Parent then
+    local function updateScrollbar()
+        if libraryRef._destroyed or not scrollFrame.Parent or not parentInstance.Parent or not trackFrame.Parent then
             return false
         end
 
-        local frame_size    = scroll_frame.AbsoluteSize
-        local window_height = frame_size.Y
-        local frame_visible = scroll_frame.Visible and frame_size.X > 0 and frame_size.Y > 0
-        local canvas_height = math.max(resolve_canvas_height(), window_height)
-        local can_scroll    = frame_visible and canvas_height > (window_height + 1)
+        local frameSize = scrollFrame.AbsoluteSize
+        local windowHeight = frameSize.Y
+        local frameVisible = scrollFrame.Visible and frameSize.X > 0 and frameSize.Y > 0
+        local canvasHeight = math.max(resolveCanvasHeight(), windowHeight)
+        local canScroll = frameVisible and canvasHeight > (windowHeight + 1)
 
-        if not frame_visible then
-            track_frame.Visible = false
-            thumb_frame.Visible = false
+        if not frameVisible then
+            trackFrame.Visible = false
+            thumbFrame.Visible = false
             return true
         end
 
-        local parent_absolute = parent_instance.AbsolutePosition
-        local frame_absolute  = scroll_frame.AbsolutePosition
-        local track_height    = math.max(0, frame_size.Y - (vertical_inset * 2))
-
-        if track_height <= 2 then
-            track_frame.Visible = false
+        local parentAbsolute = parentInstance.AbsolutePosition
+        local frameAbsolute = scrollFrame.AbsolutePosition
+        local trackHeight = math.max(0, frameSize.Y - (verticalInset * 2))
+        if trackHeight <= 2 then
+            trackFrame.Visible = false
             return true
         end
+        local trackX = math.floor((frameAbsolute.X - parentAbsolute.X) + frameSize.X - trackWidth - edgeInset + xOffset + 0.5)
+        local trackY = math.floor((frameAbsolute.Y - parentAbsolute.Y) + verticalInset + 0.5)
 
-        local track_x = math.floor((frame_absolute.X - parent_absolute.X) + frame_size.X - track_width - edge_inset + x_offset + 0.5)
-        local track_y = math.floor((frame_absolute.Y - parent_absolute.Y) + vertical_inset + 0.5)
+        trackFrame.Visible = true
+        trackFrame.Position = UDim2.fromOffset(trackX, trackY)
+        trackFrame.Size = UDim2.fromOffset(trackWidth, math.floor(trackHeight + 0.5))
+        trackFrame.BackgroundColor3 = Color3.fromRGB(11, 11, 14)
+        thumbFrame.BackgroundColor3 = libraryRef.config.AccentColor
 
-        track_frame.Visible          = true
-        track_frame.Position         = UDim2.fromOffset(track_x, track_y)
-        track_frame.Size             = UDim2.fromOffset(track_width, math.floor(track_height + 0.5))
-        track_frame.BackgroundColor3 = Color3.fromRGB(11, 11, 14)
-        thumb_frame.BackgroundColor3 = library_ref.config.AccentColor
-
-        if not can_scroll then
-            track_frame.Visible = always_show_track
-            thumb_frame.Visible = always_show_track
-            if always_show_track then
-                local resting_height = math.min(idle_thumb_height, track_height)
-                thumb_frame.Size     = UDim2.fromOffset(thumb_width, math.floor(resting_height + 0.5))
-                thumb_frame.Position = UDim2.fromOffset(
-                    math.floor(track_width * 0.5 + 0.5),
-                    math.floor(math.max(0, (track_height - resting_height) * 0.08) + 0.5)
-                )
+        if not canScroll then
+            trackFrame.Visible = alwaysShowTrack
+            thumbFrame.Visible = alwaysShowTrack
+            if alwaysShowTrack then
+                local restingThumbHeight = math.min(idleThumbHeight, trackHeight)
+                thumbFrame.Size = UDim2.fromOffset(thumbWidth, math.floor(restingThumbHeight + 0.5))
+                thumbFrame.Position = UDim2.fromOffset(math.floor(trackWidth * 0.5 + 0.5), math.floor(math.max(0, (trackHeight - restingThumbHeight) * 0.08) + 0.5))
             end
             return true
         end
 
-        thumb_frame.Visible = true
-        local min_h      = math.min(min_thumb_height, track_height)
-        local thumb_h    = math.clamp((window_height / canvas_height) * track_height, min_h, track_height)
-        local max_scroll = math.max(canvas_height - window_height, 0)
-        local scroll_ratio = max_scroll > 0
-            and math.clamp(scroll_frame.CanvasPosition.Y / max_scroll, 0, 1)
-            or 0
-        local thumb_travel = math.max(track_height - thumb_h, 0)
+        thumbFrame.Visible = true
+        local minimumThumbHeight = math.min(minThumbHeight, trackHeight)
+        local thumbHeight = math.clamp((windowHeight / canvasHeight) * trackHeight, minimumThumbHeight, trackHeight)
+        local maxScroll = math.max(canvasHeight - windowHeight, 0)
+        local scrollRatio = maxScroll > 0 and math.clamp(scrollFrame.CanvasPosition.Y / maxScroll, 0, 1) or 0
+        local thumbTravel = math.max(trackHeight - thumbHeight, 0)
 
-        thumb_frame.Size     = UDim2.fromOffset(thumb_width, math.floor(thumb_h + 0.5))
-        thumb_frame.Position = UDim2.fromOffset(
-            math.floor(track_width * 0.5 + 0.5),
-            math.floor((thumb_travel * scroll_ratio) + 0.5)
-        )
+        thumbFrame.Size = UDim2.fromOffset(thumbWidth, math.floor(thumbHeight + 0.5))
+        thumbFrame.Position = UDim2.fromOffset(math.floor(trackWidth * 0.5 + 0.5), math.floor((thumbTravel * scrollRatio) + 0.5))
 
         return true
     end
 
-    local function bind_property(property_name)
-        local ok, signal = pcall(function()
-            return scroll_frame:GetPropertyChangedSignal(property_name)
+    local function bindProperty(propertyName)
+        local okSignal, signal = pcall(function()
+            return scrollFrame:GetPropertyChangedSignal(propertyName)
         end)
-        if ok and signal then
-            library_ref:_TrackConnection(signal:Connect(update_scrollbar))
+        if okSignal and signal then
+            libraryRef:_TrackConnection(signal:Connect(updateScrollbar))
         end
     end
 
-    bind_property("CanvasPosition")
-    bind_property("CanvasSize")
-    bind_property("AbsoluteSize")
-    bind_property("AbsoluteCanvasSize")
-    bind_property("Visible")
+    bindProperty("CanvasPosition")
+    bindProperty("CanvasSize")
+    bindProperty("AbsoluteSize")
+    bindProperty("AbsoluteCanvasSize")
+    bindProperty("Visible")
 
-    local stop_tracker = start_position_tracker(library_ref, scroll_frame, update_scrollbar)
-    if stop_tracker then
-        library_ref:_TrackConnection(stop_tracker)
+    local stopFloatingTracker = start_position_tracker(libraryRef, scrollFrame, updateScrollbar)
+    if stopFloatingTracker then
+        libraryRef:_TrackConnection(stopFloatingTracker)
     end
 
-    if library_ref._scrollbarRefreshers then
-        table.insert(library_ref._scrollbarRefreshers, update_scrollbar)
+    if libraryRef._scrollbarRefreshers then
+        table.insert(libraryRef._scrollbarRefreshers, updateScrollbar)
     end
 
-    update_scrollbar()
+    updateScrollbar()
 
     return {
-        Track   = track_frame,
-        Thumb   = thumb_frame,
-        Refresh = update_scrollbar
+        Track = trackFrame,
+        Thumb = thumbFrame,
+        Refresh = updateScrollbar
     }
 end
 
-local function get_player_avatar(user_id)
-    local ok, thumbnail = pcall(function()
-        return players:GetUserThumbnailAsync(user_id, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
+local function get_player_avatar(userId)
+    local didItWork, whatWeGot = pcall(function()
+        return players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
     end)
-    if ok then
-        return thumbnail
+    if didItWork then
+        return whatWeGot
     end
     return "rbxassetid://135756197673563"
 end
@@ -525,24 +501,19 @@ local function resolve_avatar_3d(defaultUserId)
     return resolvedUserId, imageUrl
 end
 
-local function measure_text_width(text, text_size, font)
-    local bounds = text_service:GetTextSize(
-        text,
-        text_size,
-        font or Enum.Font.GothamSemibold,
-        Vector2.new(math.huge, math.huge)
-    )
-    return bounds.X
+local function measure_text_width(text, textSize, font)
+    local textBoundsYay = text_service:GetTextSize(text, textSize, font or Enum.Font.GothamSemibold, Vector2.new(math.huge, math.huge))
+    return textBoundsYay.X
 end
 
-local function truncate_text(text, max_width, text_size, font)
-    local full_width = measure_text_width(text, text_size, font)
-    if full_width <= max_width then
+local function truncate_text(text, maxWidth, textSize, font)
+    local fullWidth = measure_text_width(text, textSize, font)
+    if fullWidth <= maxWidth then
         return text
     end
-
+    
     local truncated = text
-    while measure_text_width(truncated .. "...", text_size, font) > max_width and #truncated > 0 do
+    while measure_text_width(truncated .. "...", textSize, font) > maxWidth and #truncated > 0 do
         truncated = truncated:sub(1, -2)
     end
     return truncated .. "..."
@@ -575,12 +546,12 @@ local function get_dropdown_signature(options)
     if count <= 0 then
         return "0"
     end
-    local parts = table.create and table.create(count + 1, "") or {}
-    parts[1] = tostring(count)
+    local signaturePieces = table.create and table.create(count + 1, "") or {}
+    signaturePieces[1] = tostring(count)
     for index, option in ipairs(options) do
-        parts[index + 1] = tostring(option)
+        signaturePieces[index + 1] = tostring(option)
     end
-    return table.concat(parts, "\31")
+    return table.concat(signaturePieces, "\31")
 end
 
 local function get_decimal_places(value)
@@ -1552,7 +1523,7 @@ local function pull_preview_value(sourceTable, keys)
     return nil
 end
 
-local function preview_to_bool(value)
+local function flowPreviewToBool(value)
     if type(value) == "boolean" then
         return value
     end
@@ -1571,7 +1542,7 @@ local function preview_to_bool(value)
     return nil
 end
 
-local function preview_to_color3(value)
+local function flowPreviewToColor3(value)
     if typeof(value) == "Color3" then
         return value
     end
@@ -1590,38 +1561,38 @@ local function preview_to_color3(value)
     return Color3.new(math.clamp(r, 0, 1), math.clamp(g, 0, 1), math.clamp(b, 0, 1))
 end
 
-local preview_core_body_parts = {
-    Head          = true,
-    UpperTorso    = true,
-    LowerTorso    = true,
-    Torso         = true,
-    LeftUpperArm  = true,
-    LeftLowerArm  = true,
-    LeftHand      = true,
+local flowPreviewCoreBodyParts = {
+    Head = true,
+    UpperTorso = true,
+    LowerTorso = true,
+    Torso = true,
+    LeftUpperArm = true,
+    LeftLowerArm = true,
+    LeftHand = true,
     RightUpperArm = true,
     RightLowerArm = true,
-    RightHand     = true,
-    LeftUpperLeg  = true,
-    LeftLowerLeg  = true,
-    LeftFoot      = true,
+    RightHand = true,
+    LeftUpperLeg = true,
+    LeftLowerLeg = true,
+    LeftFoot = true,
     RightUpperLeg = true,
     RightLowerLeg = true,
-    RightFoot     = true,
-    ["Left Arm"]  = true,
+    RightFoot = true,
+    ["Left Arm"] = true,
     ["Right Arm"] = true,
-    ["Left Leg"]  = true,
-    ["Right Leg"] = true,
+    ["Left Leg"] = true,
+    ["Right Leg"] = true
 }
 
-local preview_bounding_corners = {
+local flowPreviewBoundingCornerSigns = {
     Vector3.new(-1, -1, -1),
-    Vector3.new(-1, -1,  1),
-    Vector3.new(-1,  1, -1),
-    Vector3.new(-1,  1,  1),
-    Vector3.new( 1, -1, -1),
-    Vector3.new( 1, -1,  1),
-    Vector3.new( 1,  1, -1),
-    Vector3.new( 1,  1,  1),
+    Vector3.new(-1, -1, 1),
+    Vector3.new(-1, 1, -1),
+    Vector3.new(-1, 1, 1),
+    Vector3.new(1, -1, -1),
+    Vector3.new(1, -1, 1),
+    Vector3.new(1, 1, -1),
+    Vector3.new(1, 1, 1)
 }
 
 local function getModelBoundingBoxSafe(model)
@@ -1890,7 +1861,7 @@ function vora_ui:_EnsureESPPreviewCharacter()
                 obj:Destroy()
             elseif obj:IsA("BasePart") then
                 local isRootPart = obj.Name == "HumanoidRootPart"
-                local isCoreBodyPart = preview_core_body_parts[obj.Name] == true
+                local isCoreBodyPart = flowPreviewCoreBodyParts[obj.Name] == true
                 local sanitizedTransparency = math.clamp(tonumber(obj.Transparency) or 0, 0, 1)
                 if isRootPart then
                     sanitizedTransparency = 1
@@ -1944,7 +1915,7 @@ function vora_ui:_EnsureESPPreviewCharacter()
 
         if corePartCount > 0 and visibleCorePartCount < math.min(4, corePartCount) then
             for part, originalData in pairs(self._espPreviewPartDefaults) do
-                if part and part.Parent and originalData and preview_core_body_parts[part.Name] then
+                if part and part.Parent and originalData and flowPreviewCoreBodyParts[part.Name] then
                     originalData.Transparency = 0
                     part.Transparency = 0
                 end
@@ -2436,7 +2407,7 @@ function vora_ui:_ResolveESPPreviewState()
                         end
                         return false
                     end
-                    local boolValue = preview_to_bool(controlValue)
+                    local boolValue = flowPreviewToBool(controlValue)
                     if boolValue ~= nil then
                         if hasFlagToken("esp enabled", "espenabled", "esp toggle", "toggle esp", "enable esp") then
                             state.Enabled = boolValue
@@ -2502,7 +2473,7 @@ function vora_ui:_ResolveESPPreviewState()
         local touched = false
         local function setBoolField(targetField, keys)
             local rawValue = pull_preview_value(sourceTable, keys)
-            local boolValue = preview_to_bool(rawValue)
+            local boolValue = flowPreviewToBool(rawValue)
             if boolValue ~= nil then
                 state[targetField] = boolValue
                 touched = true
@@ -2532,7 +2503,7 @@ function vora_ui:_ResolveESPPreviewState()
         setNumberField("HighlightFillTransparency", {"HighlightFillTransparency", "HighlightFillAlpha"}, 0, 1)
         setNumberField("HighlightOutlineTransparency", {"HighlightOutlineTransparency", "HighlightOutlineAlpha"}, 0, 1)
 
-        local colorValue = preview_to_color3(pull_preview_value(sourceTable, {
+        local colorValue = flowPreviewToColor3(pull_preview_value(sourceTable, {
             "VisualColor", "ESPColor", "Color", "Colour", "MainColor", "ChamsColor", "HighlightColor"
         }))
         if colorValue then
@@ -2702,7 +2673,7 @@ function vora_ui:_ApplyESPPreviewPartVisualState(showChams, previewColor, chamsT
                 local targetTransparency
                 if isRootPart then
                     targetTransparency = 1
-                elseif preview_core_body_parts[part.Name] and (originalData.Transparency or 0) >= 0.98 then
+                elseif flowPreviewCoreBodyParts[part.Name] and (originalData.Transparency or 0) >= 0.98 then
                     targetTransparency = 0
                 else
                     targetTransparency = originalData.Transparency
@@ -2828,7 +2799,7 @@ function vora_ui:_UpdateESPPreview(dt)
     local viewportCamera = self._espPreviewCamera or (self._espPreviewViewport and self._espPreviewViewport.CurrentCamera)
     local viewportSize = self._espPreviewViewport and self._espPreviewViewport.AbsoluteSize or Vector2.new(0, 0)
     local hasProjectedBox = false
-    local boxMinX, boxMinY = math.huge, math.huge
+    local boxMinX, boxMinY = math.huge, math.huge 
     local boxMaxX, boxMaxY = -math.huge, -math.huge
     local headScreenPos = nil
     local rootScreenPos = nil
@@ -2879,7 +2850,7 @@ function vora_ui:_UpdateESPPreview(dt)
 
             if boundsCF and boundsSize then
                 local halfSize = boundsSize * 0.5
-                for _, cornerSign in ipairs(preview_bounding_corners) do
+                for _, cornerSign in ipairs(flowPreviewBoundingCornerSigns) do
                     local worldPoint = boundsCF:PointToWorldSpace(Vector3.new(
                         halfSize.X * cornerSign.X,
                         halfSize.Y * cornerSign.Y,
@@ -3669,52 +3640,32 @@ function vora_ui:BuildToggleButton()
         end)
     end)
 
-    local btn_is_dragging    = false
-    local btn_drag_start     = nil
-    local btn_frame_start    = nil
-    local btn_moved_far      = false
-    local btn_drag_threshold = 5
-
-    local function update_toggle_drag(input)
-        if not btn_drag_start or not btn_frame_start then return end
-        local delta = input.Position - btn_drag_start
-
-        if delta.Magnitude > btn_drag_threshold then
-            btn_moved_far = true
-        end
-
-        if btn_moved_far then
-            self.toggle_frame.Position = UDim2.new(
-                btn_frame_start.X.Scale, btn_frame_start.X.Offset + delta.X,
-                btn_frame_start.Y.Scale, btn_frame_start.Y.Offset + delta.Y
-            )
-        end
+    local dragging_t, drag_start_t, start_pos_t = false
+    local function update_drag_t(input)
+        if not drag_start_t or not start_pos_t then return end
+        local delta = input.Position - drag_start_t
+        self.toggle_frame.Position = UDim2.new(
+            start_pos_t.X.Scale, start_pos_t.X.Offset + delta.X,
+            start_pos_t.Y.Scale, start_pos_t.Y.Offset + delta.Y
+        )
     end
-
     toggle_btn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-            or input.UserInputType == Enum.UserInputType.Touch then
-
-            btn_is_dragging = true
-            btn_moved_far   = false
-            btn_drag_start  = input.Position
-            btn_frame_start = self.toggle_frame.Position
-
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging_t = true
+            drag_start_t = input.Position
+            start_pos_t = self.toggle_frame.Position
             local conn
             conn = input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
-                    btn_is_dragging = false
+                    dragging_t = false
                     conn:Disconnect()
                 end
             end)
         end
     end)
-
     self:_TrackConnection(input_service.InputChanged:Connect(function(input)
-        if btn_is_dragging
-            and (input.UserInputType == Enum.UserInputType.MouseMovement
-              or input.UserInputType == Enum.UserInputType.Touch) then
-            update_toggle_drag(input)
+        if dragging_t and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            update_drag_t(input)
         end
     end))
 end
@@ -3869,7 +3820,7 @@ function vora_ui:BuildMainFrame()
     self._mainFrameClosedPosition = UDim2.new(0.5, -frameWidth/2, 1.5, 0)
     
     self.main_frame = create("Frame", {
-        Name = "MainFrame",
+        Name = "MainFrameIsAwesome",
         BackgroundColor3 = Color3.fromRGB(13, 13, 13),
         Position = self._mainFrameOpenPosition,
         ClipsDescendants = true,
@@ -7553,6 +7504,182 @@ function vora_ui:Destroy()
     if rawget(sharedEnv, RUNTIME_INSTANCE_KEY) == self then
         rawset(sharedEnv, RUNTIME_INSTANCE_KEY, nil)
     end
+end
+
+function vora_ui.Demo()
+    local lib = vora_ui.new({
+        Name = "VoraHub Demo",
+        AccentColor = Color3.fromRGB(0, 133, 255),
+        AutoConfig = false
+    })
+
+    local main_section = lib:AddSection({Name = "Main", Icon = "sword"})
+
+    local combat_tab = main_section:AddTab({
+        Name = "Combat",
+        Description = "Combat settings",
+        Icon = "crosshair"
+    })
+
+    local aimbot_group = combat_tab:AddGroup({Name = "Aimbot", Side = "Left", Icon = "target"})
+
+    aimbot_group:AddToggle({
+        Name = "Enabled",
+        Default = false,
+        Callback = function(val) print("[Demo] Aimbot:", val) end
+    })
+
+    aimbot_group:AddSlider({
+        Name = "FOV",
+        Min = 10,
+        Max = 800,
+        Default = 120,
+        Increment = 5,
+        Callback = function(val) print("[Demo] FOV:", val) end
+    })
+
+    aimbot_group:AddDropdown({
+        Name = "Target Part",
+        Options = {"Head", "HumanoidRootPart", "Torso"},
+        Default = "Head",
+        Callback = function(val) print("[Demo] Part:", val) end
+    })
+
+    aimbot_group:AddKeybindToggle({
+        Name = "Toggle Key",
+        Default = Enum.KeyCode.E,
+        ToggleDefault = false,
+        Callback = function(val) print("[Demo] Keybind toggle:", val) end
+    })
+
+    local visuals_group = combat_tab:AddGroup({Name = "Visuals", Side = "Right", Icon = "eye"})
+
+    visuals_group:AddToggle({
+        Name = "Show FOV Circle",
+        Default = true,
+        Callback = function(val) print("[Demo] FOV Circle:", val) end
+    })
+
+    visuals_group:AddColorPicker({
+        Name = "FOV Color",
+        Default = Color3.fromRGB(255, 0, 0),
+        Callback = function(val) print("[Demo] Color:", val) end
+    })
+
+    visuals_group:AddLabel({Text = "Visuals are client-side only."})
+
+    local util_tab = main_section:AddTab({
+        Name = "Utility",
+        Description = "Utility features",
+        Icon = "wrench"
+    })
+
+    local movement_group = util_tab:AddGroup({Name = "Movement", Side = "Left", Icon = "move"})
+
+    movement_group:AddToggle({
+        Name = "Speed Hack",
+        Default = false,
+        Callback = function(val) print("[Demo] Speed:", val) end
+    })
+
+    movement_group:AddSlider({
+        Name = "Walk Speed",
+        Min = 16,
+        Max = 200,
+        Default = 16,
+        Increment = 1,
+        Callback = function(val) print("[Demo] WalkSpeed:", val) end
+    })
+
+    movement_group:AddSlider({
+        Name = "Jump Power",
+        Min = 50,
+        Max = 500,
+        Default = 50,
+        Increment = 5,
+        Callback = function(val) print("[Demo] JumpPower:", val) end
+    })
+
+    movement_group:AddKeybind({
+        Name = "Fly Key",
+        Default = Enum.KeyCode.F,
+        Callback = function() print("[Demo] Fly pressed") end
+    })
+
+    local misc_group = util_tab:AddGroup({Name = "Misc", Side = "Right", Icon = "box"})
+
+    misc_group:AddButton({
+        Name = "Rejoin Server",
+        Callback = function() print("[Demo] Rejoin clicked") end
+    })
+
+    misc_group:AddButton({
+        Name = "Copy Game Link",
+        Callback = function() print("[Demo] Copy link clicked") end
+    })
+
+    misc_group:AddTextInput({
+        Name = "Webhook URL",
+        Default = "",
+        PlaceholderText = "https://...",
+        Callback = function(val) print("[Demo] Webhook:", val) end
+    })
+
+    misc_group:AddDropdown({
+        Name = "Theme",
+        Options = {"Dark", "Midnight", "Ocean", "Sunset"},
+        Default = "Dark",
+        Callback = function(val) print("[Demo] Theme:", val) end
+    })
+
+    misc_group:AddMultiDropdown({
+        Name = "Notifications",
+        Options = {"Kills", "Deaths", "Chat", "Joins", "Teleports"},
+        Default = {"Kills", "Chat"},
+        Callback = function(val) print("[Demo] Notifs:", val) end
+    })
+
+    misc_group:AddDivider()
+
+    misc_group:AddLabel({Name = "v1.0.0 - VoraHub Demo"})
+
+    local settings_section = lib:AddSection({Name = "Config", Icon = "settings"})
+
+    local cfg_tab = settings_section:AddTab({
+        Name = "Settings",
+        Description = "Configuration",
+        Icon = "save"
+    })
+
+    local cfg_group = cfg_tab:AddGroup({Name = "Config", Side = "Left", Icon = "hard-drive"})
+
+    cfg_group:AddButton({
+        Name = "Save Config",
+        Callback = function()
+            pcall(function() lib:SaveConfig("demo_config") end)
+            lib:Notify({Title = "Config", Description = "Saved!", Duration = 3})
+        end
+    })
+
+    cfg_group:AddButton({
+        Name = "Load Config",
+        Callback = function()
+            pcall(function() lib:LoadConfig("demo_config") end)
+            lib:Notify({Title = "Config", Description = "Loaded!", Duration = 3})
+        end
+    })
+
+    local info_group = cfg_tab:AddGroup({Name = "Info", Side = "Right", Icon = "info"})
+    info_group:AddLabel({Name = "Game: " .. tostring(game.PlaceId)})
+    info_group:AddLabel({Name = "Player: " .. tostring(local_player.Name)})
+
+    lib:Notify({
+        Title = "VoraHub Demo",
+        Description = "UI loaded. Press RightCtrl to toggle.",
+        Duration = 5
+    })
+
+    return lib
 end
 
 --#endregion═════════════════════════════════════════════════════════════════════
