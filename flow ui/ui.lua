@@ -6202,13 +6202,12 @@ function vora_ui:AddSection(config)
                         dropdownObj.Changed(value)
                     end
                 end
-
                 function dropdownObj:Get()
                     return dropdownObj.value
                 end
                 
-                function dropdownObj:OnChanged(Func, callback)
-                    dropdownObj.Changed = Func or callback
+                function dropdownObj:OnChanged(callback)
+                    dropdownObj.Changed = callback
                 end
                 
                 function dropdownObj:UpdateOptions(newOptions)
@@ -6341,6 +6340,12 @@ function vora_ui:AddSection(config)
                 if multiDropdownObj._optionsSignature == "0" then
                     multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownConfig.Options)
                 end
+                multiDropdownObj.Changed = multiDropdownConfig.Callback
+
+                function multiDropdownObj:OnChanged(callback)
+                    multiDropdownObj.Changed = callback
+                end
+
                 local yPosition = groupObj.element_y
                 
                 multiDropdownObj.labelText = create("TextLabel", {
@@ -6541,7 +6546,9 @@ function vora_ui:AddSection(config)
                             local newWidth = math.max(85 * scale_factor, measure_text_width(newDisplayText, 12 * scale_factor) + 35 * scale_factor)
                             tween_to(multiDropdownObj.button_frame, {Size = UDim2.new(0, newWidth, 0, 21 * scale_factor), Position = UDim2.new(1, -newWidth - 10, 0, yPosition)}, 0.15)
                             
-                            multiDropdownConfig.Callback(getSelectedArray())
+                            if multiDropdownObj.Changed then
+                                multiDropdownObj.Changed(getSelectedArray())
+                            end
                         end)
                         
                         optionClickButton.MouseEnter:Connect(function()
@@ -6619,8 +6626,8 @@ function vora_ui:AddSection(config)
                     multiDropdownObj.button_frame.Size = UDim2.new(0, newWidth, 0, 21 * scale_factor)
                     multiDropdownObj.button_frame.Position = UDim2.new(1, -newWidth - 10, 0, yPosition)
                     createMultiOptionsYay()
-                    if not silent then
-                        multiDropdownConfig.Callback(getSelectedArray())
+                    if not silent and multiDropdownObj.Changed then
+                        multiDropdownObj.Changed(getSelectedArray())
                     end
                 end
                 
