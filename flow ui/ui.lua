@@ -6666,6 +6666,11 @@ function vora_ui:AddSection(config)
                     end
                 end
 
+                -- Backward compatibility: SetValues method
+                function multiDropdownObj:SetValues(newOptions)
+                    multiDropdownObj:UpdateOptions(newOptions)
+                end
+
                 if multiDropdownConfig.AutoRefresh then
                     groupObj.Library:_RegisterRefreshJob(multiDropdownConfig.RefreshInterval, function()
                         return not groupObj.Library._destroyed and multiDropdownObj.button_frame and multiDropdownObj.button_frame.Parent
