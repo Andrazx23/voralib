@@ -793,6 +793,9 @@ function vora_ui.new(config)
     self.config.TextColor = self.config.TextColor or Color3.fromRGB(255, 255, 255)
     self.config.SubTextColor = self.config.SubTextColor or Color3.fromRGB(124, 124, 124)
     
+    self.Toggles = Toggles
+    self.Options = Options
+
     self.sections = {}
     self.all_tabs = {}
     self.active_tab = nil
@@ -5175,6 +5178,14 @@ function vora_ui:AddSection(config)
                 
                 local toggleObj = {}
                 toggleObj.value = toggleConfig.Default
+                setmetatable(toggleObj, {
+                    __index = function(self, key)
+                        if key == "Value" then
+                            return toggleObj.value
+                        end
+                        return rawget(toggleObj, key)
+                    end
+                })
                 local yPosition = groupObj.element_y
                 
                 toggleObj.labelText = create("TextLabel", {
@@ -5887,8 +5898,10 @@ function vora_ui:AddSection(config)
                     end
                 end
                 dropdownConfig.Options = normalize_dropdown(dropdownOptionsSource)
-                dropdownConfig.Default = dropdownConfig.Default or dropdownConfig.Options[1] or "None"
-                if not table.find(dropdownConfig.Options, dropdownConfig.Default) then
+                if dropdownConfig.AllowNull ~= true then
+                    dropdownConfig.Default = dropdownConfig.Default or dropdownConfig.Options[1] or "None"
+                end
+                if dropdownConfig.Default ~= nil and not table.find(dropdownConfig.Options, dropdownConfig.Default) then
                     dropdownConfig.Default = dropdownConfig.Options[1] or "None"
                 end
                 addSearchTerm(dropdownConfig.Name)
@@ -6727,6 +6740,8 @@ function vora_ui:AddSection(config)
                 textInputConfig.Default = tostring(textInputConfig.Default or "")
                 textInputConfig.Callback = textInputConfig.Callback or function() end
                 textInputConfig.Flag = textInputConfig.Flag or createAutoFlag(textInputConfig.Name)
+                textInputConfig.Numeric = textInputConfig.Numeric == true
+                textInputConfig.Finished = textInputConfig.Finished == true
                 addSearchTerm(textInputConfig.Name)
                 addSearchTerm(textInputConfig.Placeholder)
                 
@@ -6768,6 +6783,10 @@ function vora_ui:AddSection(config)
                     Parent = textInputObj.inputFrame
                 })
                 
+                if textInputConfig.Numeric then
+                    textInputObj.textBox.ClearTextOnFocus = true
+                end
+
                 textInputObj.textBox.Focused:Connect(function()
                     tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(40, 40, 40)}, 0.2)
                 end)
@@ -6775,7 +6794,13 @@ function vora_ui:AddSection(config)
                 textInputObj.textBox.FocusLost:Connect(function(enterPressed)
                     tween_to(textInputObj.inputFrame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.2)
                     textInputObj.value = textInputObj.textBox.Text
-                    textInputConfig.Callback(textInputObj.value, enterPressed)
+                    if textInputConfig.Finished then
+                        if enterPressed then
+                            textInputConfig.Callback(textInputObj.value, enterPressed)
+                        end
+                    else
+                        textInputConfig.Callback(textInputObj.value, enterPressed)
+                    end
                 end)
                 
                 function textInputObj:Set(text)
