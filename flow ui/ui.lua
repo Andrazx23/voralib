@@ -5226,6 +5226,16 @@ function vora_ui:AddSection(config)
                     toggleObj.Changed = Func or callback
                 end
                 
+                function toggleObj:SetVisible(visible)
+                    local isVisible = visible == true
+                    if toggleObj.labelText then
+                        toggleObj.labelText.Visible = isVisible
+                    end
+                    if toggleObj.switchFrame then
+                        toggleObj.switchFrame.Visible = isVisible
+                    end
+                end
+                
                 toggleClickButton.MouseButton1Click:Connect(function() toggleObj:Set(not toggleObj.value, false) end)
                 groupObj.Library:RegisterControl(toggleConfig.Flag, function()
                     return toggleObj:Get()
@@ -5391,6 +5401,19 @@ function vora_ui:AddSection(config)
                 
                 function sliderObj:OnChanged(Func, callback)
                     sliderObj.Changed = Func or callback
+                end
+                
+                function sliderObj:SetVisible(visible)
+                    local isVisible = visible == true
+                    if sliderObj.labelText then
+                        sliderObj.labelText.Visible = isVisible
+                    end
+                    if sliderObj.valueLabelText then
+                        sliderObj.valueLabelText.Visible = isVisible
+                    end
+                    if sliderObj.backgroundFrame then
+                        sliderObj.backgroundFrame.Visible = isVisible
+                    end
                 end
                 
                 local isDraggingSlider = false
