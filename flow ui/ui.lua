@@ -5237,6 +5237,11 @@ function vora_ui:AddSection(config)
                     toggleObj.Changed = Func or callback
                 end
                 
+                -- Backward compatibility: SetValue method
+                function toggleObj:SetValue(value, silent)
+                    toggleObj:Set(value, silent)
+                end
+                
                 function toggleObj:SetVisible(visible)
                     local isVisible = visible == true
                     if toggleObj.labelText then
@@ -5255,7 +5260,8 @@ function vora_ui:AddSection(config)
                 end)
                 
                 -- Store in global Toggles table
-                Toggles[Idx or toggleConfig.Name] = toggleObj
+                local flagKey = Idx or toggleConfig.Flag or toggleConfig.Name
+                Toggles[flagKey] = toggleObj
                 toggleObj.Value = toggleObj.value
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
@@ -6269,7 +6275,8 @@ function vora_ui:AddSection(config)
                 end)
                 
                 -- Store in global Options table
-                Options[Idx or dropdownConfig.Name] = dropdownObj
+                local flagKey = Idx or dropdownConfig.Flag or dropdownConfig.Name
+                Options[flagKey] = dropdownObj
                 dropdownObj.Value = dropdownObj.value
                 
                 groupObj.element_y = groupObj.element_y + 28 * scale_factor
