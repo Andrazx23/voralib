@@ -5911,6 +5911,14 @@ function vora_ui:AddSection(config)
                 
                 local dropdownObj = {}
                 dropdownObj.value = dropdownConfig.Default
+                setmetatable(dropdownObj, {
+                    __index = function(self, key)
+                        if key == "Value" then
+                            return dropdownObj.value
+                        end
+                        return rawget(dropdownObj, key)
+                    end
+                })
                 dropdownObj.isOpen = false
                 dropdownObj._optionsSignature = get_dropdown_signature(dropdownOptionsSource)
                 if dropdownObj._optionsSignature == "0" then
@@ -6313,6 +6321,21 @@ function vora_ui:AddSection(config)
                         multiDropdownObj.selectedValues[v] = true
                     end
                 end
+                setmetatable(multiDropdownObj, {
+                    __index = function(self, key)
+                        if key == "Value" then
+                            local arr = {}
+                            for option, isSelected in pairs(multiDropdownObj.selectedValues) do
+                                if isSelected then table.insert(arr, option) end
+                            end
+                            table.sort(arr, function(a, b)
+                                return tostring(a) < tostring(b)
+                            end)
+                            return arr
+                        end
+                        return rawget(multiDropdownObj, key)
+                    end
+                })
                 multiDropdownObj.isOpen = false
                 multiDropdownObj._optionsSignature = get_dropdown_signature(multiDropdownOptionsSource)
                 if multiDropdownObj._optionsSignature == "0" then
