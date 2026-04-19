@@ -6690,6 +6690,9 @@ function vora_ui:AddSection(config)
                 function multiDropdownObj:Close()
                     closeMultiDropdown(true)
                 end
+                local flagKey = multiDropdownConfig.Flag or multiDropdownConfig.Name
+                Options[flagKey] = multiDropdownObj
+
                 groupObj.Library:RegisterControl(multiDropdownConfig.Flag, function()
                     return multiDropdownObj:Get()
                 end, function(value)
