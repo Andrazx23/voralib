@@ -6876,6 +6876,8 @@ function vora_ui:AddSection(config)
                     textInputObj:Set(textInputConfig.Default)
                 end
 
+                Options[textInputConfig.Flag] = textInputObj
+                
                 groupObj.Library:RegisterControl(textInputConfig.Flag, function()
                     return textInputObj:Get()
                 end, function(value)
