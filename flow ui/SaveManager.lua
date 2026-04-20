@@ -391,8 +391,6 @@ local SaveManager = {} do
 
         section:AddTextInput("SaveManager_ConfigName", {
             Default = "",
-            Numeric = false,
-            Finished = true,
             Text = "Config name",
             Placeholder = "Enter config name"
         })
