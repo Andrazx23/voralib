@@ -738,7 +738,7 @@ local function destroy_existing_guis()
 
     if type(gethui) == "function" then
         local okHui, huiRoot = pcall(gethui)
-        if okHui then
+        if okHui and huiRoot and typeof(huiRoot) == "Instance" then
             addRoot(huiRoot)
         end
     end
@@ -3226,13 +3226,15 @@ function vora_ui:LoadConfig(fileName)
         return false, "Invalid config JSON format."
     end
     
+    self._isApplyingConfig = true
     for flag, rawValue in pairs(data.controls) do
         local control = self._trackedControls[flag]
         if control then
             local decodedValue = deserialize_value(rawValue)
-            pcall(control.set, decodedValue)
+            pcall(control.set, decodedValue, false)
         end
     end
+    self._isApplyingConfig = false
 
     return true, path
 end
@@ -4675,7 +4677,7 @@ end
 
 function vora_ui:BuildNotificationHolder()
     self.notification_holder = create("Frame", {
-        BackgroundTransparency = 1, Position = UDim2.new(0, 20, 0.5, 0),
+        BackgroundTransparency = 1, Position = UDim2.new(0, 20, 0.15, 0),
         AnchorPoint = Vector2.new(0, 0.5), Size = UDim2.new(0, 300 * scale_factor, 0, 400),
         Parent = self.screen_gui
     })
@@ -6855,6 +6857,7 @@ function vora_ui:AddSection(config)
                 end
                 
                 function textInputObj:Get()
+                    textInputObj.value = textInputObj.textBox.Text
                     return textInputObj.value
                 end
 
