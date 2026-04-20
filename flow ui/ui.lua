@@ -6958,7 +6958,7 @@ function vora_ui:AddSection(config)
             
             function groupObj:AddColorPicker(colorPickerConfig)
                 colorPickerConfig = colorPickerConfig or {}
-                colorPickerConfig.Name = colorPickerConfig.Name or "Color"
+                colorPickerConfig.Name = colorPickerConfig.Title or colorPickerConfig.Text or colorPickerConfig.Name or "Color"
                 colorPickerConfig.Default = colorPickerConfig.Default or Color3.fromRGB(255, 100, 150)
                 colorPickerConfig.Callback = colorPickerConfig.Callback or function() end
                 colorPickerConfig.Flag = colorPickerConfig.Flag or createAutoFlag(colorPickerConfig.Name)
