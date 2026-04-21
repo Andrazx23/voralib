@@ -5888,9 +5888,17 @@ function vora_ui:AddSection(config)
                 if type(dropdownConfig) == "string" then
                     Idx = dropdownConfig
                     dropdownConfig = {Name = dropdownConfig, Flag = dropdownConfig, Text = config and config.Text or dropdownConfig, Values = config and config.Values or {}}
+                    -- Check for Multi parameter in old API format
+                    if config and config.Multi == true then
+                        return groupObj:AddMultiDropdown(Idx, config)
+                    end
                 end
                 
                 dropdownConfig = dropdownConfig or {}
+                -- Support Multi parameter in new API format
+                if dropdownConfig.Multi == true then
+                    return groupObj:AddMultiDropdown(dropdownConfig)
+                end
                 dropdownConfig.Name = dropdownConfig.Name or dropdownConfig.Text or "Dropdown"
                 dropdownConfig.Options = dropdownConfig.Options or dropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 dropdownConfig.OptionsProvider = dropdownConfig.OptionsProvider or dropdownConfig.GetOptions
