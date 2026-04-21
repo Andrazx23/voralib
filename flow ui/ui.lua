@@ -6333,12 +6333,12 @@ function vora_ui:AddSection(config)
                 multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
                 local multiDropdownOptionsSource = multiDropdownConfig.Options
                 if type(multiDropdownConfig.OptionsProvider) == "function" then
-                    local ok, providedOptions = pcall(multiDropdownConfig.OptionsProvider)
                     if ok and type(providedOptions) == "table" then
                         multiDropdownOptionsSource = providedOptions
                     end
                 end
                 multiDropdownConfig.Options = normalize_dropdown(multiDropdownOptionsSource)
+                warn("[UI Debug] MultiDropdown " .. tostring(multiDropdownConfig.Name) .. " options:", multiDropdownConfig.Options)
                 addSearchTerm(multiDropdownConfig.Name)
                 for _, option in ipairs(multiDropdownConfig.Options) do
                     addSearchTerm(tostring(option))
