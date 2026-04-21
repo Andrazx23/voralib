@@ -3332,7 +3332,7 @@ function vora_ui:BuildUI()
 
         local nowClock = os.clock()
         if not self._autoConfigLoadAttempted then
-            if next(self._trackedControls) ~= nil and (nowClock - (self._lastControlRegistration or nowClock)) >= 1.25 then
+            if next(self._trackedControls) ~= nil and (nowClock - (self._lastControlRegistration or nowClock)) >= 0.5 then
                 pcall(function() self:_TryAutoLoadConfig(false) end)
             end
         elseif self._autoConfigEnabled then
@@ -6302,7 +6302,7 @@ function vora_ui:AddSection(config)
                 
                 multiDropdownConfig = multiDropdownConfig or {}
                 multiDropdownConfig.Name = multiDropdownConfig.Name or "Multi Dropdown"
-                multiDropdownConfig.Options = multiDropdownConfig.Options or {"Option 1", "Option 2", "Option 3"}
+                multiDropdownConfig.Options = multiDropdownConfig.Options or multiDropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 multiDropdownConfig.OptionsProvider = multiDropdownConfig.OptionsProvider or multiDropdownConfig.GetOptions
                 local multiDropdownHasProvider = type(multiDropdownConfig.OptionsProvider) == "function"
                 if multiDropdownConfig.AutoRefresh == nil then
