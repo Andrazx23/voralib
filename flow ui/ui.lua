@@ -6305,7 +6305,16 @@ function vora_ui:AddSection(config)
                 local Idx = nil
                 if type(multiDropdownConfig) == "string" then
                     Idx = multiDropdownConfig
-                    multiDropdownConfig = {Name = multiDropdownConfig, Values = config and config.Values or {}}
+                    -- Preserve all config options and map Values to Options
+                    local oldConfig = config or {}
+                    multiDropdownConfig = {
+                        Name = oldConfig.Text or multiDropdownConfig,
+                        Options = oldConfig.Values or {},
+                        Default = oldConfig.Default,
+                        Callback = oldConfig.Callback,
+                        Searchable = oldConfig.Searchable,
+                        Flag = multiDropdownConfig
+                    }
                 end
                 
                 multiDropdownConfig = multiDropdownConfig or {}
