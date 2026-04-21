@@ -3333,7 +3333,7 @@ function vora_ui:BuildUI()
         local nowClock = os.clock()
         if not self._autoConfigLoadAttempted then
             if next(self._trackedControls) ~= nil and (nowClock - (self._lastControlRegistration or nowClock)) >= 1.25 then
-                self:_TryAutoLoadConfig(false)
+                pcall(function() self:_TryAutoLoadConfig(false) end)
             end
         elseif self._autoConfigEnabled then
             self._autoConfigAccumulator = (self._autoConfigAccumulator or 0) + dt
