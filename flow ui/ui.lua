@@ -5890,6 +5890,7 @@ function vora_ui:AddSection(config)
                     dropdownConfig = {Name = dropdownConfig, Flag = dropdownConfig, Text = config and config.Text or dropdownConfig, Values = config and config.Values or {}}
                     -- Check for Multi parameter in old API format
                     if config and config.Multi == true then
+                        warn("[UI Debug] Redirecting to AddMultiDropdown:", Idx, "Values:", config.Values)
                         return groupObj:AddMultiDropdown(Idx, config)
                     end
                 end
