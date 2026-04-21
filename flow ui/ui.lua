@@ -1059,8 +1059,7 @@ function vora_ui:_TryAutoSaveConfig(forceSave)
     end
 
     return okSave == true
-end
-
+end   
 function vora_ui:_TryAutoLoadConfig(forceAttempt)
     if self._destroyed then
         return false
@@ -5258,7 +5257,10 @@ function vora_ui:AddSection(config)
                 groupObj.Library:RegisterControl(toggleConfig.Flag, function()
                     return toggleObj:Get()
                 end, function(value)
-                    toggleObj:Set(value == true, true)
+                    toggleObj:Set(value == true, false)
+                    if toggleObj.Changed then
+                        toggleObj.Changed(value == true)
+                    end
                 end)
                 
                 -- Store in global Toggles table
@@ -5471,7 +5473,10 @@ function vora_ui:AddSection(config)
                 groupObj.Library:RegisterControl(sliderConfig.Flag, function()
                     return sliderObj:Get()
                 end, function(value)
-                    sliderObj:Set(tonumber(value) or sliderConfig.Min, true, true)
+                    sliderObj:Set(tonumber(value) or sliderConfig.Min, true, false)
+                    if sliderObj.Changed then
+                        sliderObj.Changed(sliderObj.value)
+                    end
                 end)
                 
                 -- Store in global Options table
@@ -6773,6 +6778,11 @@ function vora_ui:AddSection(config)
                 groupObj.element_y = groupObj.element_y + labelHeight + 6 * scale_factor
                 update_group_size()
                 return labelObj
+            end
+            
+            function groupObj:AddInput(textInputConfig, config)
+                -- Support old API: AddInput(name, config) - same as AddTextInput
+                return groupObj:AddTextInput(textInputConfig, config)
             end
             
             function groupObj:AddTextInput(textInputConfig, config)
