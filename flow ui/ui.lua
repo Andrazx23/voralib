@@ -3291,6 +3291,7 @@ function vora_ui:BuildUI()
     
     self:BuildWatermark()
     self:BuildMainFrame()
+    self:_SetNameHidden(self._uiVisualSettings.HideName)
     if self._uiVisualSettings.ESPSelfPreview then
         self:_CreateESPPreviewPanel()
     end
