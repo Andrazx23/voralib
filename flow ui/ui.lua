@@ -857,7 +857,7 @@ function vora_ui.new(config)
         BackgroundEffects = false,
         TextGradient = true,
         ESPSelfPreview = false,
-        HideName = false
+        HideName = true
     }
     self._fontPresets = {
         {Name = "Gotham", EnumFont = Enum.Font.Gotham, Family = "rbxasset://fonts/families/GothamSSm.json", Weight = Enum.FontWeight.SemiBold},
