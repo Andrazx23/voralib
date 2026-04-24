@@ -5195,7 +5195,7 @@ function vora_ui:AddSection(config)
                 
                 toggleObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = toggleConfig.Name, BackgroundTransparency = 1,
+                    TextColor3 = Color3.fromRGB(124, 124, 124), Text = toggleConfig.Text or toggleConfig.Name, BackgroundTransparency = 1,
                     Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14.6 * scale_factor,
                     Size = UDim2.new(0, 195 * scale_factor, 0, 20 * scale_factor),
                     TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd,
