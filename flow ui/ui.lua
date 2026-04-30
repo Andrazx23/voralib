@@ -5009,7 +5009,7 @@ function vora_ui:AddSection(config)
         tabObj.content_scroll = create("ScrollingFrame", {
             BackgroundTransparency = 1, Position = UDim2.new(0, 4, 0, 4),
             Size = UDim2.new(1, -8, 1, -8), ScrollBarThickness = 0,
-            CanvasSize = UDim2.new(0, 540 * scale_factor, 0, 0), Visible = false,
+            CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Visible = false,
             Parent = sectionObj.Library.content_holder
         })
         attach_scrollbar(sectionObj.Library, tabObj.content_scroll, sectionObj.Library.content_holder, {
@@ -6333,7 +6333,7 @@ function vora_ui:AddSection(config)
                     multiDropdownConfig.AutoRefresh = multiDropdownConfig.AutoRefresh == true
                 end
                 multiDropdownConfig.RefreshInterval = math.max(tonumber(multiDropdownConfig.RefreshInterval) or 0.85, 0.35)
-                multiDropdownConfig.Default = multiDropdownConfig.Default or {}
+                multiDropdownConfig.Default = type(multiDropdownConfig.Default) == "table" and multiDropdownConfig.Default or {}
                 multiDropdownConfig.Callback = multiDropdownConfig.Callback or function() end
                 multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
                 local multiDropdownOptionsSource = multiDropdownConfig.Options
@@ -6351,9 +6351,11 @@ function vora_ui:AddSection(config)
                 
                 local multiDropdownObj = {}
                 multiDropdownObj.selectedValues = {}
-                for _, v in ipairs(multiDropdownConfig.Default) do
-                    if table.find(multiDropdownConfig.Options, v) then
-                        multiDropdownObj.selectedValues[v] = true
+                if type(multiDropdownConfig.Default) == "table" then
+                    for _, v in ipairs(multiDropdownConfig.Default) do
+                        if table.find(multiDropdownConfig.Options, v) then
+                            multiDropdownObj.selectedValues[v] = true
+                        end
                     end
                 end
                 setmetatable(multiDropdownObj, {
