@@ -3303,10 +3303,17 @@ function vora_ui:BuildUI()
     self:_SetOverlayMode(self._overlayMode)
     self:_ApplyOpenCloseVisuals(true)
     
+    local lastTogglePress = 0
     self:_TrackConnection(input_service.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
         if input.KeyCode == self.toggleKeyCode then
-            self:Toggle()
+            local now = os.clock()
+            if lastTogglePress ~= 0 and (now - lastTogglePress) < 0.4 then
+                self:Toggle()
+                lastTogglePress = 0
+            else
+                lastTogglePress = now
+            end
         end
     end))
     
@@ -6326,6 +6333,7 @@ function vora_ui:AddSection(config)
                 multiDropdownConfig.Name = multiDropdownConfig.Name or "Multi Dropdown"
                 multiDropdownConfig.Options = multiDropdownConfig.Options or multiDropdownConfig.Values or {"Option 1", "Option 2", "Option 3"}
                 multiDropdownConfig.OptionsProvider = multiDropdownConfig.OptionsProvider or multiDropdownConfig.GetOptions
+                multiDropdownConfig.Searchable = multiDropdownConfig.Searchable ~= false -- Default true
                 local multiDropdownHasProvider = type(multiDropdownConfig.OptionsProvider) == "function"
                 if multiDropdownConfig.AutoRefresh == nil then
                     multiDropdownConfig.AutoRefresh = multiDropdownHasProvider
@@ -6459,6 +6467,46 @@ function vora_ui:AddSection(config)
                     TextTruncate = Enum.TextTruncate.AtEnd, ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
                 })
 
+                -- Search Box
+                local searchBoxY = multiDropdownConfig.Searchable and (30 * scale_factor) or 0
+                if multiDropdownConfig.Searchable then
+                    local searchBoxFrame = create("Frame", {
+                        BackgroundColor3 = Color3.fromRGB(32, 32, 32),
+                        Position = UDim2.new(0, 10, 0, 30 * scale_factor),
+                        Size = UDim2.new(1, -20 * scale_factor, 0, 24 * scale_factor),
+                        ZIndex = 10001, Parent = multiDropdownObj.optionHolderFrame
+                    })
+                    create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = searchBoxFrame})
+                    create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = searchBoxFrame})
+                    
+                    local searchIcon = create("ImageLabel", {
+                        Image = get_icon("search"), ImageColor3 = Color3.fromRGB(100, 100, 100),
+                        BackgroundTransparency = 1,
+                        Position = UDim2.new(0, 6, 0.5, -7 * scale_factor),
+                        Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor),
+                        ZIndex = 10002, Parent = searchBoxFrame
+                    })
+                    
+                    local searchTextBox = create("TextBox", {
+                        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                        TextColor3 = Color3.fromRGB(180, 180, 180), Text = "", PlaceholderText = "Search...",
+                        PlaceholderColor3 = Color3.fromRGB(100, 100, 100),
+                        BackgroundTransparency = 1, ClearTextOnFocus = false,
+                        Position = UDim2.new(0, 26 * scale_factor, 0, 0),
+                        Size = UDim2.new(1, -32 * scale_factor, 1, 0),
+                        TextSize = 12 * scale_factor, TextXAlignment = Enum.TextXAlignment.Left,
+                        ZIndex = 10002, Parent = searchBoxFrame
+                    })
+                    
+                    multiDropdownObj.searchTextBox = searchTextBox
+                    multiDropdownObj.searchQuery = ""
+                    
+                    searchTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+                        multiDropdownObj.searchQuery = searchTextBox.Text:lower()
+                        createMultiOptionsYay(multiDropdownObj.searchQuery)
+                    end)
+                end
+
                 local multiDropdownCloseButton = create("TextButton", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
                     Text = "X", TextColor3 = Color3.fromRGB(170, 170, 170), TextSize = 14 * scale_factor,
@@ -6470,8 +6518,10 @@ function vora_ui:AddSection(config)
                 create("UICorner", {CornerRadius = UDim.new(1, 0), Parent = multiDropdownCloseButton})
                 
                 multiDropdownObj.optionScrollFrame = create("ScrollingFrame", {
-                    BackgroundTransparency = 1, Position = UDim2.new(0, 0, 0, 30 * scale_factor),
-                    Size = UDim2.new(1, 0, 1, -35 * scale_factor), ScrollBarThickness = 0,
+                    BackgroundTransparency = 1, 
+                    Position = UDim2.new(0, 0, 0, multiDropdownConfig.Searchable and (58 * scale_factor) or (30 * scale_factor)),
+                    Size = UDim2.new(1, 0, 1, multiDropdownConfig.Searchable and (-63 * scale_factor) or (-35 * scale_factor)), 
+                    ScrollBarThickness = 0,
                     ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80), CanvasSize = UDim2.new(0, 0, 0, 0),
                     ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
                 })
@@ -6528,12 +6578,17 @@ function vora_ui:AddSection(config)
                     tween_to(multiDropdownCloseButton, {BackgroundColor3 = Color3.fromRGB(24, 24, 24), TextColor3 = Color3.fromRGB(138, 138, 138)}, 0.12)
                 end)
 
-                local function createMultiOptionsYay()
+                local function createMultiOptionsYay(filterText)
+                    filterText = filterText or ""
                     for _, child in pairs(multiDropdownObj.optionContainerFrame:GetChildren()) do
                         if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
                     end
                     local optY = 0
                     for _, option in ipairs(multiDropdownConfig.Options) do
+                        -- Filter options based on search text
+                        if filterText ~= "" and not tostring(option):lower():find(filterText, 1, true) then
+                            continue
+                        end
                         local isSelected = multiDropdownObj.selectedValues[option] == true
                         
                         local optionFrame = create("Frame", {
