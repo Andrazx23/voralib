@@ -6468,44 +6468,42 @@ function vora_ui:AddSection(config)
                 })
 
                 -- Search Box
-                local searchBoxY = multiDropdownConfig.Searchable and (30 * scale_factor) or 0
-                if multiDropdownConfig.Searchable then
-                    local searchBoxFrame = create("Frame", {
-                        BackgroundColor3 = Color3.fromRGB(32, 32, 32),
-                        Position = UDim2.new(0, 10, 0, 30 * scale_factor),
-                        Size = UDim2.new(1, -20 * scale_factor, 0, 24 * scale_factor),
-                        ZIndex = 10001, Parent = multiDropdownObj.optionHolderFrame
-                    })
-                    create("UICorner", {CornerRadius = UDim.new(0, 4), Parent = searchBoxFrame})
-                    create("UIStroke", {Color = Color3.fromRGB(44, 44, 44), Parent = searchBoxFrame})
-                    
-                    local searchIcon = create("ImageLabel", {
-                        Image = get_icon("search"), ImageColor3 = Color3.fromRGB(100, 100, 100),
-                        BackgroundTransparency = 1,
-                        Position = UDim2.new(0, 6, 0.5, -7 * scale_factor),
-                        Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor),
-                        ZIndex = 10002, Parent = searchBoxFrame
-                    })
-                    
-                    local searchTextBox = create("TextBox", {
-                        FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
-                        TextColor3 = Color3.fromRGB(180, 180, 180), Text = "", PlaceholderText = "Search...",
-                        PlaceholderColor3 = Color3.fromRGB(100, 100, 100),
-                        BackgroundTransparency = 1, ClearTextOnFocus = false,
-                        Position = UDim2.new(0, 26 * scale_factor, 0, 0),
-                        Size = UDim2.new(1, -32 * scale_factor, 1, 0),
-                        TextSize = 12 * scale_factor, TextXAlignment = Enum.TextXAlignment.Left,
-                        ZIndex = 10002, Parent = searchBoxFrame
-                    })
-                    
-                    multiDropdownObj.searchTextBox = searchTextBox
-                    multiDropdownObj.searchQuery = ""
-                    
-                    searchTextBox:GetPropertyChangedSignal("Text"):Connect(function()
-                        multiDropdownObj.searchQuery = searchTextBox.Text:lower()
-                        createMultiOptionsYay(multiDropdownObj.searchQuery)
-                    end)
-                end
+                local searchBoxY = 32 * scale_factor
+                local searchBoxFrame = create("Frame", {
+                    BackgroundColor3 = Color3.fromRGB(22, 22, 22), BorderSizePixel = 0,
+                    Position = UDim2.new(0, 8, 0, searchBoxY),
+                    Size = UDim2.new(1, -16, 0, 22 * scale_factor),
+                    ZIndex = 10001, Parent = multiDropdownObj.optionHolderFrame
+                })
+                create("UICorner", {CornerRadius = UDim.new(0, 5), Parent = searchBoxFrame})
+                create("UIStroke", {Color = Color3.fromRGB(50, 50, 50), Thickness = 1, Parent = searchBoxFrame})
+                
+                local searchIcon = create("ImageLabel", {
+                    Image = get_icon("search"), ImageColor3 = Color3.fromRGB(100, 100, 100),
+                    BackgroundTransparency = 1,
+                    Position = UDim2.new(0, 6, 0.5, -7 * scale_factor),
+                    Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor),
+                    ZIndex = 10002, Parent = searchBoxFrame
+                })
+                
+                local searchTextBox = create("TextBox", {
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    TextColor3 = Color3.fromRGB(180, 180, 180), Text = "", PlaceholderText = "Search...",
+                    PlaceholderColor3 = Color3.fromRGB(100, 100, 100),
+                    BackgroundTransparency = 1, ClearTextOnFocus = false,
+                    Position = UDim2.new(0, 26 * scale_factor, 0, 0),
+                    Size = UDim2.new(1, -32 * scale_factor, 1, 0),
+                    TextSize = 12 * scale_factor, TextXAlignment = Enum.TextXAlignment.Left,
+                    ZIndex = 10002, Parent = searchBoxFrame
+                })
+                
+                multiDropdownObj.searchTextBox = searchTextBox
+                multiDropdownObj.searchQuery = ""
+                
+                searchTextBox:GetPropertyChangedSignal("Text"):Connect(function()
+                    multiDropdownObj.searchQuery = searchTextBox.Text:lower()
+                    createMultiOptionsYay(multiDropdownObj.searchQuery)
+                end)
 
                 local multiDropdownCloseButton = create("TextButton", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold),
@@ -6519,8 +6517,8 @@ function vora_ui:AddSection(config)
                 
                 multiDropdownObj.optionScrollFrame = create("ScrollingFrame", {
                     BackgroundTransparency = 1, 
-                    Position = UDim2.new(0, 0, 0, multiDropdownConfig.Searchable and (58 * scale_factor) or (30 * scale_factor)),
-                    Size = UDim2.new(1, 0, 1, multiDropdownConfig.Searchable and (-63 * scale_factor) or (-35 * scale_factor)), 
+                    Position = UDim2.new(0, 0, 0, 58 * scale_factor),
+                    Size = UDim2.new(1, 0, 1, -63 * scale_factor), 
                     ScrollBarThickness = 0,
                     ScrollBarImageColor3 = Color3.fromRGB(80, 80, 80), CanvasSize = UDim2.new(0, 0, 0, 0),
                     ZIndex = 10000, Parent = multiDropdownObj.optionHolderFrame
@@ -6545,6 +6543,10 @@ function vora_ui:AddSection(config)
 
                 local function closeMultiDropdown(isInstant)
                     multiDropdownObj.isOpen = false
+                    if multiDropdownObj.searchTextBox then
+                        multiDropdownObj.searchTextBox.Text = ""
+                        multiDropdownObj.searchQuery = ""
+                    end
                     if multiDropdownPositionConn then
                         multiDropdownPositionConn()
                         multiDropdownPositionConn = nil
@@ -6661,6 +6663,10 @@ function vora_ui:AddSection(config)
                     end
                     multiDropdownObj.optionContainerFrame.Size = UDim2.new(1, -6, 0, optY)
                     multiDropdownObj.optionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, optY)
+                    if multiDropdownObj.isOpen then
+                        local target_h = math.min((58 + optY / scale_factor + 5) * scale_factor, maxMultiDropdownHeight)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, target_h)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                    end
                 end
                 createMultiOptionsYay()
                 
@@ -6677,10 +6683,16 @@ function vora_ui:AddSection(config)
                     if multiDropdownObj.isOpen then
                         updateDropdownPositionYay()
                         multiDropdownObj.optionHolderFrame.Visible = true
-                        local contentHeight = (38 + (#multiDropdownConfig.Options * 24)) * scale_factor
+                        if multiDropdownObj.searchTextBox then
+                            multiDropdownObj.searchTextBox.Text = ""
+                            multiDropdownObj.searchQuery = ""
+                        end
+                        createMultiOptionsYay()
+                        local contentHeight = (58 + (#multiDropdownConfig.Options * 24) + 5) * scale_factor
                         local height = math.min(contentHeight, maxMultiDropdownHeight)
                         tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         tween_to(multiDropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        task.defer(function() if multiDropdownObj.searchTextBox and multiDropdownObj.searchTextBox.Parent then multiDropdownObj.searchTextBox:CaptureFocus() end end)
                         if multiDropdownPositionConn then multiDropdownPositionConn() end
                         multiDropdownPositionConn = start_position_tracker(groupObj.Library, multiDropdownObj.button_frame, function()
                             if multiDropdownObj.isOpen then
