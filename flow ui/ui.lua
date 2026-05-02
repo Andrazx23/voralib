@@ -3649,12 +3649,26 @@ function vora_ui:BuildToggleButton()
         Parent = self.toggle_frame
     })
 
+    local last_click = 0
     toggle_btn.MouseButton1Click:Connect(function()
-        self:Toggle()
-        tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 0.65, 0, btn_size * 0.65)}, 0.1)
-        task.delay(0.1, function()
-            tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 0.85, 0, btn_size * 0.85)}, 0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-        end)
+        local current_time = tick()
+        if current_time - last_click < 0.45 then
+            self:Toggle()
+            tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 0.65, 0, btn_size * 0.65)}, 0.1)
+            task.delay(0.1, function()
+                tween_to(self.toggle_icon, {Size = UDim2.new(0, btn_size * 0.85, 0, btn_size * 0.85)}, 0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+            end)
+            last_click = 0 -- Reset after success
+        else
+            last_click = current_time
+            -- Visual feedback for first click
+            tween_to(self.toggle_icon, {ImageColor3 = self.config.AccentColor}, 0.1)
+            task.delay(0.45, function()
+                if last_click == current_time then
+                    tween_to(self.toggle_icon, {ImageColor3 = Color3.new(1, 1, 1)}, 0.2)
+                end
+            end)
+        end
     end)
 
     local dragging_t, drag_start_t, start_pos_t = false
@@ -6397,9 +6411,9 @@ function vora_ui:AddSection(config)
                 multiDropdownObj.labelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(124, 124, 124), Text = multiDropdownConfig.Name, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 14 * scale_factor,
-                    Size = UDim2.new(0, 100 * scale_factor, 0, 20 * scale_factor),
-                    TextXAlignment = Enum.TextXAlignment.Left, Parent = groupObj.mainFrame
+                    Position = UDim2.new(0, 10, 0, yPosition), TextSize = 13.8 * scale_factor,
+                    Size = UDim2.new(0, 130 * scale_factor, 0, 20 * scale_factor),
+                    TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = groupObj.mainFrame
                 })
                 
                 local function getDisplayText()
@@ -6441,7 +6455,7 @@ function vora_ui:AddSection(config)
                 multiDropdownObj.selectedLabelText = create("TextLabel", {
                     FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
                     TextColor3 = Color3.fromRGB(84, 84, 84), Text = displayText, BackgroundTransparency = 1,
-                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12 * scale_factor,
+                    Position = UDim2.new(0, 8, 0, 0), TextSize = 12.8 * scale_factor,
                     Size = UDim2.new(1, -28 * scale_factor, 1, 0), TextXAlignment = Enum.TextXAlignment.Left,
                     TextTruncate = Enum.TextTruncate.AtEnd, Parent = multiDropdownObj.button_frame
                 })
@@ -6452,11 +6466,12 @@ function vora_ui:AddSection(config)
                     Size = UDim2.new(0, 14 * scale_factor, 0, 14 * scale_factor), Parent = multiDropdownObj.button_frame
                 })
                 
+                local multiDropdown_popup_w = math.max(180 * scale_factor, buttonWidth + 20 * scale_factor)
                 multiDropdownObj.optionHolderFrame = create("Frame", {
-                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, 160 * scale_factor, 0, 0),
+                    BackgroundColor3 = Color3.fromRGB(16, 16, 16), Size = UDim2.new(0, multiDropdown_popup_w, 0, 0),
                     ClipsDescendants = true, Visible = false, ZIndex = 9999, Parent = groupObj.Library.dropdown_holder
                 })
-                create("UICorner", {CornerRadius = UDim.new(0, 6), Parent = multiDropdownObj.optionHolderFrame})
+                create("UICorner", {CornerRadius = UDim.new(0, 8), Parent = multiDropdownObj.optionHolderFrame})
                 create("UIStroke", {Color = Color3.fromRGB(40, 40, 40), Parent = multiDropdownObj.optionHolderFrame})
                 
                 create("TextLabel", {
@@ -6487,7 +6502,7 @@ function vora_ui:AddSection(config)
                 })
                 
                 local searchTextBox = create("TextBox", {
-                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.SemiBold),
+                    FontFace = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular),
                     TextColor3 = Color3.fromRGB(180, 180, 180), Text = "", PlaceholderText = "Search...",
                     PlaceholderColor3 = Color3.fromRGB(100, 100, 100),
                     BackgroundTransparency = 1, ClearTextOnFocus = false,
@@ -6552,14 +6567,14 @@ function vora_ui:AddSection(config)
                         multiDropdownPositionConn = nil
                     end
                     if isInstant then
-                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, 160 * scale_factor, 0, 0)
+                        multiDropdownObj.optionHolderFrame.Size = UDim2.new(0, multiDropdown_popup_w, 0, 0)
                         multiDropdownObj.optionHolderFrame.Visible = false
                         multiDropdownObj.arrowImg.Rotation = 0
                         multiDropdownObj.button_frame.BackgroundColor3 = Color3.fromRGB(32, 32, 32)
                         dropdownStrokeThing.Color = Color3.fromRGB(44, 44, 44)
                         return
                     end
-                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+                    tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, multiDropdown_popup_w, 0, 0)}, 0.22, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
                     tween_to(multiDropdownObj.arrowImg, {Rotation = 0}, 0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
                     tween_to(multiDropdownObj.button_frame, {BackgroundColor3 = Color3.fromRGB(32, 32, 32)}, 0.18)
                     tween_to(dropdownStrokeThing, {Color = Color3.fromRGB(44, 44, 44)}, 0.18)
@@ -6665,7 +6680,7 @@ function vora_ui:AddSection(config)
                     multiDropdownObj.optionScrollFrame.CanvasSize = UDim2.new(0, 0, 0, optY)
                     if multiDropdownObj.isOpen then
                         local target_h = math.min((58 + optY / scale_factor + 5) * scale_factor, maxMultiDropdownHeight)
-                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, target_h)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, multiDropdown_popup_w, 0, target_h)}, 0.14, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                     end
                 end
                 createMultiOptionsYay()
@@ -6690,7 +6705,7 @@ function vora_ui:AddSection(config)
                         createMultiOptionsYay()
                         local contentHeight = (58 + (#multiDropdownConfig.Options * 24) + 5) * scale_factor
                         local height = math.min(contentHeight, maxMultiDropdownHeight)
-                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, 160 * scale_factor, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+                        tween_to(multiDropdownObj.optionHolderFrame, {Size = UDim2.new(0, multiDropdown_popup_w, 0, height)}, 0.28, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         tween_to(multiDropdownObj.arrowImg, {Rotation = 180}, 0.24, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
                         task.defer(function() if multiDropdownObj.searchTextBox and multiDropdownObj.searchTextBox.Parent then multiDropdownObj.searchTextBox:CaptureFocus() end end)
                         if multiDropdownPositionConn then multiDropdownPositionConn() end
