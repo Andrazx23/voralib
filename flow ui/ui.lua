@@ -6351,6 +6351,12 @@ function vora_ui:AddSection(config)
                 end
                 
                 local multiDropdownObj = {}
+                if type(multiDropdownConfig.Default) == "string" then
+                    multiDropdownConfig.Default = {multiDropdownConfig.Default}
+                elseif type(multiDropdownConfig.Default) ~= "table" then
+                    multiDropdownConfig.Default = {}
+                end
+                
                 multiDropdownObj.selectedValues = {}
                 for _, v in ipairs(multiDropdownConfig.Default) do
                     if table.find(multiDropdownConfig.Options, v) then
