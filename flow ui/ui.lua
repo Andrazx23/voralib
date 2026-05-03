@@ -6338,6 +6338,7 @@ function vora_ui:AddSection(config)
                 multiDropdownConfig.Flag = multiDropdownConfig.Flag or createAutoFlag(multiDropdownConfig.Name)
                 local multiDropdownOptionsSource = multiDropdownConfig.Options
                 if type(multiDropdownConfig.OptionsProvider) == "function" then
+                    local ok, providedOptions = pcall(multiDropdownConfig.OptionsProvider)
                     if ok and type(providedOptions) == "table" then
                         multiDropdownOptionsSource = providedOptions
                     end
@@ -6531,7 +6532,8 @@ function vora_ui:AddSection(config)
                         if child:IsA("Frame") or child:IsA("TextButton") then child:Destroy() end
                     end
                     local optY = 0
-                    for _, option in ipairs(multiDropdownConfig.Options) do
+                    local dropdownOptions = multiDropdownConfig.Options or {}
+                    for _, option in ipairs(dropdownOptions) do
                         local isSelected = multiDropdownObj.selectedValues[option] == true
                         
                         local optionFrame = create("Frame", {
